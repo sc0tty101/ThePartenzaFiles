@@ -25,6 +25,9 @@ async function initDb() {
       tags TEXT[] DEFAULT '{}',
       review TEXT,
       rating INTEGER DEFAULT 3,
+      location_name TEXT,
+      lat DOUBLE PRECISION,
+      lng DOUBLE PRECISION,
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
@@ -41,6 +44,12 @@ async function initDb() {
       ('siteTagline', 'A curated archive of accidents, disasters, and the stories they leave behind.')
     ON CONFLICT (key) DO NOTHING;
   `);
+  // Add location columns to existing tables that predate this migration
+  await pool.query(`
+    ALTER TABLE entries ADD COLUMN IF NOT EXISTS location_name TEXT;
+    ALTER TABLE entries ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION;
+    ALTER TABLE entries ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION;
+  `);
   await seedEntries();
 }
 
@@ -55,7 +64,9 @@ async function seedEntries() {
       type: 'video',
       tags: ['space', 'nasa', 'challenger', 'engineering'],
       review: "Feynman's famous O-ring demonstration before the Rogers Commission is one of the most quietly devastating moments in the history of public accountability. A physicist drops a rubber ring in ice water and unravels years of institutional cover. Essential.",
-      rating: 5
+      rating: 5,
+      location_name: 'Kennedy Space Center, Florida, USA',
+      lat: 28.5729, lng: -80.6490
     },
     {
       title: 'Mayday: Air Crash Investigation — Überlingen Mid-Air Collision',
@@ -63,7 +74,9 @@ async function seedEntries() {
       type: 'video',
       tags: ['aviation', 'atc', 'collision', 'europe'],
       review: 'Two aircraft collide over Germany in 2002 because of conflicting instructions from an automated system and a controller. The episode covers the crash but also the devastating aftermath — including the murder of the controller by a grieving father. Hard to watch, impossible to look away.',
-      rating: 4
+      rating: 4,
+      location_name: 'Überlingen, Germany',
+      lat: 47.7606, lng: 9.1611
     },
     {
       title: 'Normal Accidents: Living with High-Risk Technologies — Charles Perrow',
@@ -71,7 +84,9 @@ async function seedEntries() {
       type: 'book',
       tags: ['systems', 'theory', 'nuclear', 'engineering'],
       review: "Perrow's argument is simple and unsettling: in tightly coupled, complex systems, catastrophic accidents aren't failures — they're normal. Written after Three Mile Island, it holds up uncomfortably well. Dense but worth it if you want to understand why disasters keep happening despite our best efforts.",
-      rating: 5
+      rating: 5,
+      location_name: 'Three Mile Island, Pennsylvania, USA',
+      lat: 40.1533, lng: -76.7252
     },
     {
       title: '99% Invisible — The Pruitt-Igoe Myth',
@@ -79,7 +94,9 @@ async function seedEntries() {
       type: 'podcast',
       tags: ['architecture', 'housing', 'urban', 'collapse'],
       review: "The demolition of the Pruitt-Igoe housing project in St. Louis became shorthand for the failure of modernist architecture. This episode complicates that story considerably — the buildings weren't the problem. A good listen for anyone interested in how we assign blame after things fail.",
-      rating: 4
+      rating: 4,
+      location_name: 'St. Louis, Missouri, USA',
+      lat: 38.6270, lng: -90.1994
     },
     {
       title: 'The Fukushima Daiichi Nuclear Disaster — Official NAIIC Report Summary',
@@ -87,7 +104,9 @@ async function seedEntries() {
       type: 'article',
       tags: ['nuclear', 'japan', 'fukushima', 'tsunami'],
       review: "The National Diet's official investigation concluded the disaster was \"profoundly manmade.\" The executive summary alone is worth reading — unusually frank for a government document, it names the cultural and regulatory failures directly. The first 20 pages tell you everything.",
-      rating: 5
+      rating: 5,
+      location_name: 'Fukushima Daiichi, Japan',
+      lat: 37.4215, lng: 141.0329
     },
     {
       title: 'Seconds from Disaster — Texas City Refinery Explosion',
@@ -95,7 +114,9 @@ async function seedEntries() {
       type: 'video',
       tags: ['industrial', 'explosion', 'bp', 'texas'],
       review: 'The 2005 BP Texas City disaster killed 15 people and injured 180. This reconstruction shows how a series of normalised deviations — each individually survivable — combined into catastrophe. Good on the human factors side, though it underplays the corporate cost-cutting context.',
-      rating: 3
+      rating: 3,
+      location_name: 'Texas City, Texas, USA',
+      lat: 29.3838, lng: -94.9027
     },
     {
       title: "How Flint's Water Crisis Happened — FiveThirtyEight",
@@ -103,7 +124,9 @@ async function seedEntries() {
       type: 'article',
       tags: ['water', 'flint', 'infrastructure', 'public-health'],
       review: "Data-driven reconstruction of how Flint's water supply became contaminated with lead. Clear on the sequence of decisions and the bureaucratic gaps that allowed it to continue. Good as a primer before going deeper into longer-form coverage.",
-      rating: 3
+      rating: 3,
+      location_name: 'Flint, Michigan, USA',
+      lat: 43.0125, lng: -83.6875
     },
     {
       title: 'The Ramstein Airshow Disaster — Der Spiegel',
@@ -111,15 +134,18 @@ async function seedEntries() {
       type: 'article',
       tags: ['aviation', 'airshow', 'germany', 'military'],
       review: 'The 1988 Ramstein airshow crash killed 70 people when an aerobatic display went wrong over a packed crowd. Largely forgotten outside Germany. This piece revisits it with survivor testimony and asks why so little changed about airshow safety in the aftermath.',
-      rating: 4
+      rating: 4,
+      location_name: 'Ramstein Air Base, Germany',
+      lat: 49.4369, lng: 7.6003
     }
   ];
 
   for (const entry of entries) {
     await pool.query(
-      `INSERT INTO entries (id, title, url, type, tags, review, rating)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [uuidv4(), entry.title, entry.url, entry.type, entry.tags, entry.review, entry.rating]
+      `INSERT INTO entries (id, title, url, type, tags, review, rating, location_name, lat, lng)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [uuidv4(), entry.title, entry.url, entry.type, entry.tags, entry.review, entry.rating,
+       entry.location_name || null, entry.lat || null, entry.lng || null]
     );
   }
   console.log(`Seeded ${entries.length} test entries.`);
@@ -208,9 +234,13 @@ app.post('/api/setup', async (req, res) => {
 app.post('/api/entries', requireAuth, async (req, res) => {
   const tags = parseTags(req.body.tags);
   const result = await pool.query(
-    `INSERT INTO entries (id, title, url, type, tags, review, rating)
-     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-    [uuidv4(), req.body.title, req.body.url, req.body.type, tags, req.body.review, parseInt(req.body.rating) || 3]
+    `INSERT INTO entries (id, title, url, type, tags, review, rating, location_name, lat, lng)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+    [uuidv4(), req.body.title, req.body.url, req.body.type, tags, req.body.review,
+     parseInt(req.body.rating) || 3,
+     req.body.location_name || null,
+     req.body.lat ? parseFloat(req.body.lat) : null,
+     req.body.lng ? parseFloat(req.body.lng) : null]
   );
   res.json(normalizeEntry(result.rows[0]));
 });
@@ -219,9 +249,15 @@ app.post('/api/entries', requireAuth, async (req, res) => {
 app.put('/api/entries/:id', requireAuth, async (req, res) => {
   const tags = parseTags(req.body.tags);
   const result = await pool.query(
-    `UPDATE entries SET title=$1, url=$2, type=$3, tags=$4, review=$5, rating=$6, updated_at=NOW()
-     WHERE id=$7 RETURNING *`,
-    [req.body.title, req.body.url, req.body.type, tags, req.body.review, parseInt(req.body.rating) || 3, req.params.id]
+    `UPDATE entries SET title=$1, url=$2, type=$3, tags=$4, review=$5, rating=$6,
+     location_name=$7, lat=$8, lng=$9, updated_at=NOW()
+     WHERE id=$10 RETURNING *`,
+    [req.body.title, req.body.url, req.body.type, tags, req.body.review,
+     parseInt(req.body.rating) || 3,
+     req.body.location_name || null,
+     req.body.lat ? parseFloat(req.body.lat) : null,
+     req.body.lng ? parseFloat(req.body.lng) : null,
+     req.params.id]
   );
   if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
   res.json(normalizeEntry(result.rows[0]));
@@ -256,10 +292,13 @@ app.post('/api/import', requireAuth, express.json({ limit: '10mb' }), async (req
     const id = entry.id || uuidv4();
     const tags = Array.isArray(entry.tags) ? entry.tags : parseTags(entry.tags);
     await pool.query(
-      `INSERT INTO entries (id, title, url, type, tags, review, rating, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO entries (id, title, url, type, tags, review, rating, location_name, lat, lng, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        ON CONFLICT (id) DO NOTHING`,
       [id, entry.title, entry.url, entry.type, tags, entry.review || '', parseInt(entry.rating) || 3,
+       entry.location_name || null,
+       entry.lat ? parseFloat(entry.lat) : null,
+       entry.lng ? parseFloat(entry.lng) : null,
        entry.createdAt || new Date(), entry.updatedAt || new Date()]
     );
     inserted++;
@@ -300,6 +339,9 @@ function normalizeEntry(row) {
     tags: row.tags || [],
     review: row.review,
     rating: row.rating,
+    location_name: row.location_name || null,
+    lat: row.lat != null ? parseFloat(row.lat) : null,
+    lng: row.lng != null ? parseFloat(row.lng) : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };

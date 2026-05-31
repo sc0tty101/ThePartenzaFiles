@@ -132,6 +132,7 @@
     document.getElementById('entry-id').value = '';
     document.getElementById('entry-form').reset();
     setStars(3);
+    clearLocation();
     document.getElementById('entry-error').textContent = '';
     document.getElementById('entry-modal').style.display = 'flex';
     document.getElementById('entry-title').focus();
@@ -149,9 +150,59 @@
     document.getElementById('entry-tags').value = (entry.tags || []).join(', ');
     document.getElementById('entry-review').value = entry.review || '';
     setStars(entry.rating || 3);
+    if (entry.location_name && entry.lat != null) {
+      setLocation(entry.location_name, entry.lat, entry.lng);
+    } else {
+      clearLocation();
+    }
     document.getElementById('entry-error').textContent = '';
     document.getElementById('entry-modal').style.display = 'flex';
     document.getElementById('entry-title').focus();
+  }
+
+  function setLocation(name, lat, lng) {
+    document.getElementById('entry-location-name').value = name;
+    document.getElementById('entry-lat').value = lat;
+    document.getElementById('entry-lng').value = lng;
+    document.getElementById('entry-location-search').value = '';
+    document.getElementById('location-results').style.display = 'none';
+    document.getElementById('location-selected-name').textContent = name;
+    document.getElementById('location-selected').style.display = 'flex';
+  }
+
+  function clearLocation() {
+    document.getElementById('entry-location-name').value = '';
+    document.getElementById('entry-lat').value = '';
+    document.getElementById('entry-lng').value = '';
+    document.getElementById('entry-location-search').value = '';
+    document.getElementById('location-results').style.display = 'none';
+    document.getElementById('location-selected').style.display = 'none';
+  }
+
+  async function geocodeSearch() {
+    const query = document.getElementById('entry-location-search').value.trim();
+    if (!query) return;
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`,
+      { headers: { 'Accept-Language': 'en' } }
+    );
+    const results = await res.json();
+    const list = document.getElementById('location-results');
+    if (results.length === 0) {
+      list.innerHTML = '<li class="location-result-none">No results found</li>';
+    } else {
+      list.innerHTML = results.map((r, i) =>
+        `<li class="location-result-item" data-idx="${i}">${escHtml(r.display_name)}</li>`
+      ).join('');
+      list.querySelectorAll('.location-result-item').forEach((el, i) => {
+        el.addEventListener('click', () => {
+          setLocation(results[i].display_name, parseFloat(results[i].lat), parseFloat(results[i].lon));
+        });
+      });
+    }
+    list.style.display = 'block';
+    // Store results for click handlers
+    list._results = results;
   }
 
   function closeModal() {
@@ -238,6 +289,20 @@
       setStars(currentRating);
     });
 
+    // Location search
+    document.getElementById('location-search-btn').addEventListener('click', geocodeSearch);
+    document.getElementById('entry-location-search').addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); geocodeSearch(); }
+    });
+    document.getElementById('location-clear-btn').addEventListener('click', clearLocation);
+
+    // Close location results when clicking outside
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#entry-location-search') && !e.target.closest('#location-results') && !e.target.closest('#location-search-btn')) {
+        document.getElementById('location-results').style.display = 'none';
+      }
+    });
+
     // Entry form submit
     document.getElementById('entry-form').addEventListener('submit', async e => {
       e.preventDefault();
@@ -247,7 +312,10 @@
         type: document.getElementById('entry-type').value,
         tags: document.getElementById('entry-tags').value,
         review: document.getElementById('entry-review').value.trim(),
-        rating: document.getElementById('entry-rating').value
+        rating: document.getElementById('entry-rating').value,
+        location_name: document.getElementById('entry-location-name').value || null,
+        lat: document.getElementById('entry-lat').value || null,
+        lng: document.getElementById('entry-lng').value || null
       };
       const ok = await saveEntry(data);
       if (ok) {
