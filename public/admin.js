@@ -292,6 +292,41 @@
       }
     });
 
+    // Import file picker
+    document.getElementById('import-file').addEventListener('change', async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const errorEl = document.getElementById('import-error');
+      const resultEl = document.getElementById('import-result');
+      errorEl.textContent = '';
+      resultEl.textContent = '';
+
+      let data;
+      try {
+        data = JSON.parse(await file.text());
+      } catch {
+        errorEl.textContent = 'Invalid JSON file.';
+        e.target.value = '';
+        return;
+      }
+
+      const res = await fetch('/api/import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const json = await res.json();
+      e.target.value = '';
+
+      if (!res.ok) {
+        errorEl.textContent = json.error || 'Import failed.';
+      } else {
+        resultEl.textContent = `Imported ${json.inserted} entr${json.inserted === 1 ? 'y' : 'ies'}${json.skipped ? `, ${json.skipped} skipped` : ''}.`;
+        setTimeout(() => resultEl.textContent = '', 4000);
+        await loadEntries();
+      }
+    });
+
     // Keyboard: Escape closes modals
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape') {
