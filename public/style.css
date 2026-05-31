@@ -707,6 +707,34 @@ button, .btn-primary, .btn-ghost, .btn-danger {
   font-size: 0.9rem;
 }
 
+/* ── Backup & restore ── */
+.backup-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.backup-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.backup-desc {
+  font-size: 0.83rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.btn-download, .btn-upload {
+  display: inline-block;
+  text-align: center;
+  font-size: 0.88rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
 /* ── Responsive ── */
 @media (max-width: 600px) {
   .header-inner { flex-direction: column; align-items: flex-start; }

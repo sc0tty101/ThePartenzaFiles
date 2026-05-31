@@ -82,6 +82,23 @@
             <p id="password-error" class="form-error"></p>
           </form>
         </div>
+
+        <div class="settings-section">
+          <h3>Backup &amp; restore</h3>
+          <div class="backup-row">
+            <div class="backup-col">
+              <p class="backup-desc">Download all entries as a JSON file.</p>
+              <a id="export-btn" href="/api/export" class="btn-primary btn-download">&#8595; Export entries</a>
+            </div>
+            <div class="backup-col">
+              <p class="backup-desc">Import from a previously exported JSON file. Existing entries (matched by ID) are skipped.</p>
+              <label class="btn-ghost btn-upload" for="import-file">&#8593; Import entries</label>
+              <input type="file" id="import-file" accept=".json" style="display:none">
+              <span id="import-result" class="saved-msg"></span>
+              <p id="import-error" class="form-error"></p>
+            </div>
+          </div>
+        </div>
       </div>
 
     </main>

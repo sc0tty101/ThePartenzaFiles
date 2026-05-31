@@ -233,6 +233,41 @@ app.delete('/api/entries/:id', requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// Admin: export all entries as JSON download
+app.get('/api/export', requireAuth, async (req, res) => {
+  const result = await pool.query('SELECT * FROM entries ORDER BY created_at ASC');
+  const data = JSON.stringify(result.rows.map(normalizeEntry), null, 2);
+  const filename = `partenza-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.setHeader('Content-Type', 'application/json');
+  res.send(data);
+});
+
+// Admin: import entries from JSON
+app.post('/api/import', requireAuth, express.json({ limit: '10mb' }), async (req, res) => {
+  const entries = req.body;
+  if (!Array.isArray(entries)) return res.status(400).json({ error: 'Expected a JSON array of entries' });
+
+  let inserted = 0;
+  let skipped = 0;
+
+  for (const entry of entries) {
+    if (!entry.title || !entry.url || !entry.type) { skipped++; continue; }
+    const id = entry.id || uuidv4();
+    const tags = Array.isArray(entry.tags) ? entry.tags : parseTags(entry.tags);
+    await pool.query(
+      `INSERT INTO entries (id, title, url, type, tags, review, rating, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       ON CONFLICT (id) DO NOTHING`,
+      [id, entry.title, entry.url, entry.type, tags, entry.review || '', parseInt(entry.rating) || 3,
+       entry.createdAt || new Date(), entry.updatedAt || new Date()]
+    );
+    inserted++;
+  }
+
+  res.json({ ok: true, inserted, skipped });
+});
+
 // Admin: update site config
 app.put('/api/config', requireAuth, async (req, res) => {
   if (req.body.siteTitle) await setConfig('siteTitle', req.body.siteTitle);
