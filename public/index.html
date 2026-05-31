@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Partenza Files</title>
   <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
   <header>
@@ -29,7 +30,11 @@
         <button class="filter-btn" data-type="podcast">Podcast</button>
         <button class="filter-btn" data-type="book">Book</button>
       </div>
-      <div class="sort-wrap">
+      <div class="view-sort-wrap">
+        <div class="view-toggle">
+          <button class="view-btn active" data-view="list" title="List view">&#9776; List</button>
+          <button class="view-btn" data-view="map" title="Map view">&#9679; Map</button>
+        </div>
         <select id="sort">
           <option value="newest">Newest first</option>
           <option value="oldest">Oldest first</option>
@@ -43,10 +48,20 @@
 
     <div id="results-count" class="results-count"></div>
 
-    <div id="entries" class="entries-grid"></div>
+    <!-- List view -->
+    <div id="view-list">
+      <div id="entries" class="entries-grid"></div>
+      <div id="empty" class="empty-state" style="display:none">
+        <p>No entries found.</p>
+      </div>
+    </div>
 
-    <div id="empty" class="empty-state" style="display:none">
-      <p>No entries found.</p>
+    <!-- Map view -->
+    <div id="view-map" style="display:none">
+      <div id="map"></div>
+      <p id="map-no-location" class="map-no-location" style="display:none">
+        No entries with locations match the current filters.
+      </p>
     </div>
   </main>
 
@@ -54,6 +69,7 @@
     <p>The Partenza Files &mdash; a personal archive</p>
   </footer>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="/main.js"></script>
 </body>
 </html>
