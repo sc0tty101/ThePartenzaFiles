@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Partenza Files</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="header-text">
+        <h1 id="site-title">The Partenza Files</h1>
+        <p id="site-tagline"></p>
+      </div>
+      <a href="/admin.html" class="admin-link">&#9656; Admin</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="controls">
+      <div class="search-wrap">
+        <input type="text" id="search" placeholder="Search titles, reviews, tags..." autocomplete="off">
+      </div>
+      <div class="filters">
+        <button class="filter-btn active" data-type="all">All</button>
+        <button class="filter-btn" data-type="video">Video</button>
+        <button class="filter-btn" data-type="article">Article</button>
+        <button class="filter-btn" data-type="podcast">Podcast</button>
+        <button class="filter-btn" data-type="book">Book</button>
+      </div>
+      <div class="sort-wrap">
+        <select id="sort">
+          <option value="newest">Newest first</option>
+          <option value="oldest">Oldest first</option>
+          <option value="rating-high">Rating: high to low</option>
+          <option value="rating-low">Rating: low to high</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="tag-cloud" class="tag-cloud"></div>
+
+    <div id="results-count" class="results-count"></div>
+
+    <div id="entries" class="entries-grid"></div>
+
+    <div id="empty" class="empty-state" style="display:none">
+      <p>No entries found.</p>
+    </div>
+  </main>
+
+  <footer>
+    <p>The Partenza Files &mdash; a personal archive</p>
+  </footer>
+
+  <script src="/main.js"></script>
+</body>
+</html>

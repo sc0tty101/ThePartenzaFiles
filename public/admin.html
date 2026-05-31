@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin &mdash; The Partenza Files</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="admin-body">
+
+  <div id="setup-screen" class="auth-screen" style="display:none">
+    <div class="auth-box">
+      <h2>Set up your password</h2>
+      <p class="auth-sub">This is your first time. Choose a password for the admin panel.</p>
+      <form id="setup-form">
+        <input type="password" id="setup-password" placeholder="Choose a password (8+ chars)" required minlength="8">
+        <button type="submit">Set password &amp; enter</button>
+        <p id="setup-error" class="form-error"></p>
+      </form>
+    </div>
+  </div>
+
+  <div id="login-screen" class="auth-screen" style="display:none">
+    <div class="auth-box">
+      <h2>The Partenza Files</h2>
+      <p class="auth-sub">Admin access</p>
+      <form id="login-form">
+        <input type="password" id="login-password" placeholder="Password" required>
+        <button type="submit">Enter</button>
+        <p id="login-error" class="form-error"></p>
+      </form>
+      <a href="/" class="back-link">&larr; Back to site</a>
+    </div>
+  </div>
+
+  <div id="admin-panel" style="display:none">
+    <header class="admin-header">
+      <a href="/" class="admin-logo">&#9664; The Partenza Files</a>
+      <nav class="admin-nav">
+        <button class="tab-btn active" data-tab="entries">Entries</button>
+        <button class="tab-btn" data-tab="settings">Settings</button>
+      </nav>
+      <button id="logout-btn" class="logout-btn">Log out</button>
+    </header>
+
+    <main class="admin-main">
+
+      <!-- ENTRIES TAB -->
+      <div id="tab-entries" class="tab-content">
+        <div class="admin-toolbar">
+          <h2>Entries <span id="entry-count" class="count-badge"></span></h2>
+          <button id="new-entry-btn" class="btn-primary">+ New entry</button>
+        </div>
+
+        <div id="admin-entry-list" class="admin-entry-list"></div>
+      </div>
+
+      <!-- SETTINGS TAB -->
+      <div id="tab-settings" class="tab-content" style="display:none">
+        <h2>Settings</h2>
+        <div class="settings-section">
+          <h3>Site info</h3>
+          <form id="site-info-form">
+            <label>Site title
+              <input type="text" id="settings-title" name="siteTitle">
+            </label>
+            <label>Tagline
+              <input type="text" id="settings-tagline" name="siteTagline">
+            </label>
+            <button type="submit" class="btn-primary">Save</button>
+            <span id="site-info-saved" class="saved-msg"></span>
+          </form>
+        </div>
+        <div class="settings-section">
+          <h3>Change password</h3>
+          <form id="change-password-form">
+            <label>New password
+              <input type="password" id="new-password" placeholder="8+ characters" minlength="8" required>
+            </label>
+            <button type="submit" class="btn-primary">Update password</button>
+            <span id="password-saved" class="saved-msg"></span>
+            <p id="password-error" class="form-error"></p>
+          </form>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Entry form modal -->
+  <div id="entry-modal" class="modal" style="display:none">
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-title">New entry</h3>
+        <button class="modal-close" id="modal-close">&times;</button>
+      </div>
+      <form id="entry-form">
+        <input type="hidden" id="entry-id">
+        <label>Title *
+          <input type="text" id="entry-title" required placeholder="e.g. The Challenger Disaster — Full Investigation">
+        </label>
+        <label>URL *
+          <input type="url" id="entry-url" required placeholder="https://...">
+        </label>
+        <div class="form-row">
+          <label>Type *
+            <select id="entry-type" required>
+              <option value="">Select type</option>
+              <option value="video">Video</option>
+              <option value="article">Article</option>
+              <option value="podcast">Podcast</option>
+              <option value="book">Book</option>
+            </select>
+          </label>
+          <label>Rating *
+            <div class="star-input" id="star-input" role="group" aria-label="Rating">
+              <button type="button" class="star" data-value="1">&#9733;</button>
+              <button type="button" class="star" data-value="2">&#9733;</button>
+              <button type="button" class="star" data-value="3">&#9733;</button>
+              <button type="button" class="star" data-value="4">&#9733;</button>
+              <button type="button" class="star" data-value="5">&#9733;</button>
+            </div>
+            <input type="hidden" id="entry-rating" value="3">
+          </label>
+        </div>
+        <label>Tags <span class="label-hint">(comma separated, e.g. aviation, fire, investigation)</span>
+          <input type="text" id="entry-tags" placeholder="challenger, nasa, space">
+        </label>
+        <label>Review *
+          <textarea id="entry-review" rows="5" required placeholder="What makes this worth reading/watching? What does it cover well?"></textarea>
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" id="cancel-btn">Cancel</button>
+          <button type="submit" class="btn-primary" id="save-btn">Save entry</button>
+        </div>
+        <p id="entry-error" class="form-error"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete confirm modal -->
+  <div id="delete-modal" class="modal" style="display:none">
+    <div class="modal-overlay" id="delete-overlay"></div>
+    <div class="modal-box modal-box--sm">
+      <h3>Delete entry?</h3>
+      <p id="delete-confirm-title" class="delete-confirm-text"></p>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="delete-cancel">Cancel</button>
+        <button class="btn-danger" id="delete-confirm">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/admin.js"></script>
+</body>
+</html>
