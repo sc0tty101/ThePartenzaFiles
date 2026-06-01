@@ -16,7 +16,11 @@ const pool = new Pool({
 });
 
 function slugify(text) {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return text
+    .normalize('NFD').replace(/[̀-ͯ]/g, '') // strip accents: Ü→U, é→e
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
 async function initDb() {
@@ -243,10 +247,11 @@ async function seedData() {
     const id = uuidv4();
     incidentIdBySlug[slug] = id;
     await pool.query(
-      `INSERT INTO incidents (id, slug, title, description, date, location_name, lat, lng, tags)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      `INSERT INTO incidents (id, slug, title, description, date, location_name, lat, lng, tags, image_url)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [id, slug, incident.title, incident.description, incident.date,
-       incident.location_name || null, incident.lat || null, incident.lng || null, incident.tags]
+       incident.location_name || null, incident.lat || null, incident.lng || null,
+       incident.tags, incident.image_url || null]
     );
   }
 
