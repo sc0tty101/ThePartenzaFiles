@@ -68,6 +68,7 @@ async function initDb() {
     ALTER TABLE entries ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION;
     ALTER TABLE entries ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION;
     ALTER TABLE entries ADD COLUMN IF NOT EXISTS incident_id UUID REFERENCES incidents(id) ON DELETE SET NULL;
+    ALTER TABLE incidents ADD COLUMN IF NOT EXISTS image_url TEXT;
   `);
 
   await seedData();
@@ -318,13 +319,13 @@ app.post('/api/incidents', requireAuth, async (req, res) => {
   const tags = parseTags(req.body.tags);
   const slug = req.body.slug || slugify(req.body.title);
   const result = await pool.query(
-    `INSERT INTO incidents (id, slug, title, description, date, location_name, lat, lng, tags)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+    `INSERT INTO incidents (id, slug, title, description, date, location_name, lat, lng, tags, image_url)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
     [uuidv4(), slug, req.body.title, req.body.description || null, req.body.date || null,
      req.body.location_name || null,
      req.body.lat ? parseFloat(req.body.lat) : null,
      req.body.lng ? parseFloat(req.body.lng) : null,
-     tags]
+     tags, req.body.image_url || null]
   );
   res.json(normalizeIncident(result.rows[0]));
 });
@@ -334,13 +335,13 @@ app.put('/api/incidents/:id', requireAuth, async (req, res) => {
   const slug = req.body.slug || slugify(req.body.title);
   const result = await pool.query(
     `UPDATE incidents SET slug=$1, title=$2, description=$3, date=$4, location_name=$5,
-     lat=$6, lng=$7, tags=$8, updated_at=NOW()
-     WHERE id=$9 RETURNING *`,
+     lat=$6, lng=$7, tags=$8, image_url=$9, updated_at=NOW()
+     WHERE id=$10 RETURNING *`,
     [slug, req.body.title, req.body.description || null, req.body.date || null,
      req.body.location_name || null,
      req.body.lat ? parseFloat(req.body.lat) : null,
      req.body.lng ? parseFloat(req.body.lng) : null,
-     tags, req.params.id]
+     tags, req.body.image_url || null, req.params.id]
   );
   if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
   res.json(normalizeIncident(result.rows[0]));
@@ -545,6 +546,7 @@ function normalizeIncident(row) {
     lat: row.lat != null ? parseFloat(row.lat) : null,
     lng: row.lng != null ? parseFloat(row.lng) : null,
     tags: row.tags || [],
+    image_url: row.image_url || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   };

@@ -153,6 +153,12 @@
           <input type="hidden" id="incident-lat">
           <input type="hidden" id="incident-lng">
         </label>
+        <label>Image URL <span class="label-hint">(optional — used as banner and card thumbnail)</span>
+          <input type="url" id="incident-image-url" placeholder="https://...">
+          <div id="incident-image-preview" class="image-preview" style="display:none">
+            <img id="incident-image-preview-img" src="" alt="Preview">
+          </div>
+        </label>
         <div class="modal-actions">
           <button type="button" class="btn-ghost" id="incident-cancel-btn">Cancel</button>
           <button type="submit" class="btn-primary">Save incident</button>
