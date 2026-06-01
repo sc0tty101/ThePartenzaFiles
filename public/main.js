@@ -1,4 +1,5 @@
 (() => {
+  let allIncidents = [];
   let allEntries = [];
   let activeType = 'all';
   let activeTag = null;
@@ -9,35 +10,97 @@
   let markers = [];
 
   async function init() {
-    const [configRes, entriesRes] = await Promise.all([
+    const slug = new URLSearchParams(window.location.search).get('incident');
+
+    const [configRes, incidentsRes, entriesRes] = await Promise.all([
       fetch('/api/config'),
+      fetch('/api/incidents'),
       fetch('/api/entries')
     ]);
     const config = await configRes.json();
-    const entries = await entriesRes.json();
+    allIncidents = await incidentsRes.json();
+    allEntries = await entriesRes.json();
 
     document.getElementById('site-title').textContent = config.siteTitle;
     document.getElementById('site-tagline').textContent = config.siteTagline;
     document.title = config.siteTitle;
-    allEntries = entries;
 
+    if (slug) {
+      showDetailView(slug);
+    } else {
+      showBrowseView();
+    }
+  }
+
+  function showBrowseView() {
+    document.getElementById('browse-view').style.display = 'block';
+    document.getElementById('detail-view').style.display = 'none';
     buildTagCloud();
     render();
     attachControls();
   }
 
+  async function showDetailView(slug) {
+    document.getElementById('browse-view').style.display = 'none';
+    document.getElementById('detail-view').style.display = 'block';
+
+    const res = await fetch(`/api/incidents/by-slug/${encodeURIComponent(slug)}`);
+    if (!res.ok) {
+      document.getElementById('detail-content').innerHTML =
+        '<p class="empty-state">Incident not found.</p>';
+      return;
+    }
+    const incident = await res.json();
+    renderDetailView(incident);
+  }
+
+  function renderDetailView(incident) {
+    const content = document.getElementById('detail-content');
+
+    content.innerHTML = `
+      <div class="incident-detail-header">
+        <h2 class="incident-detail-title">${escHtml(incident.title)}</h2>
+        <div class="incident-detail-meta">
+          ${incident.date ? `<span>${escHtml(incident.date)}</span>` : ''}
+          ${incident.date && incident.location_name ? '<span class="meta-sep">&middot;</span>' : ''}
+          ${incident.location_name ? `<span>${escHtml(incident.location_name)}</span>` : ''}
+        </div>
+        ${incident.description ? `<p class="incident-detail-desc">${escHtml(incident.description)}</p>` : ''}
+        ${(incident.tags || []).length ? `
+          <div class="incident-detail-tags">
+            ${incident.tags.map(t => `<span class="entry-tag">${escHtml(t)}</span>`).join('')}
+          </div>` : ''}
+      </div>
+
+      <div class="detail-entries-section">
+        <h3 class="detail-entries-heading">${(incident.entries || []).length} entr${(incident.entries || []).length === 1 ? 'y' : 'ies'}</h3>
+        ${!incident.entries || incident.entries.length === 0
+          ? '<p class="empty-state" style="padding:2rem 0">No entries linked to this incident yet.</p>'
+          : `<div class="entries-grid">${incident.entries.map(e => entryCardHtml(e, false)).join('')}</div>`
+        }
+      </div>
+    `;
+  }
+
   function buildTagCloud() {
     const tagCounts = {};
-    allEntries.forEach(e => {
-      (e.tags || []).forEach(t => { tagCounts[t] = (tagCounts[t] || 0) + 1; });
+    allIncidents.forEach(i => {
+      (i.tags || []).forEach(t => { tagCounts[t] = (tagCounts[t] || 0) + 1; });
     });
     const sorted = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
     const cloud = document.getElementById('tag-cloud');
     cloud.innerHTML = '';
+
+    const preselect = new URLSearchParams(window.location.search).get('tag');
+
     sorted.forEach(([tag]) => {
       const btn = document.createElement('button');
       btn.className = 'tag-pill';
       btn.textContent = tag;
+      if (tag === preselect) {
+        activeTag = tag;
+        btn.classList.add('active');
+      }
       btn.addEventListener('click', () => toggleTag(tag, btn));
       cloud.appendChild(btn);
     });
@@ -55,60 +118,133 @@
     render();
   }
 
-  function starsHtml(rating) {
-    let html = '';
-    for (let i = 1; i <= 5; i++) {
-      html += i <= rating ? '<span>&#9733;</span>' : '<span class="empty-star">&#9733;</span>';
-    }
-    return html;
-  }
+  function filteredIncidents() {
+    let list = [...allIncidents];
 
-  function filteredEntries() {
-    let list = [...allEntries];
-    if (activeType !== 'all') list = list.filter(e => e.type === activeType);
-    if (activeTag) list = list.filter(e => (e.tags || []).includes(activeTag));
+    if (activeType !== 'all') {
+      list = list.filter(i => (i.entry_types || []).includes(activeType));
+    }
+    if (activeTag) {
+      list = list.filter(i => (i.tags || []).includes(activeTag));
+    }
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      list = list.filter(e =>
-        e.title.toLowerCase().includes(q) ||
-        (e.review || '').toLowerCase().includes(q) ||
-        (e.tags || []).some(t => t.toLowerCase().includes(q)) ||
-        (e.location_name || '').toLowerCase().includes(q)
+      list = list.filter(i =>
+        i.title.toLowerCase().includes(q) ||
+        (i.description || '').toLowerCase().includes(q) ||
+        (i.tags || []).some(t => t.toLowerCase().includes(q)) ||
+        (i.location_name || '').toLowerCase().includes(q)
       );
     }
+
     list.sort((a, b) => {
       if (sortOrder === 'newest') return new Date(b.createdAt) - new Date(a.createdAt);
       if (sortOrder === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
-      if (sortOrder === 'rating-high') return b.rating - a.rating;
-      if (sortOrder === 'rating-low') return a.rating - b.rating;
+      if (sortOrder === 'most-entries') return (b.entry_count || 0) - (a.entry_count || 0);
       return 0;
     });
     return list;
   }
 
-  function render() {
-    const list = filteredEntries();
-    const countEl = document.getElementById('results-count');
-    countEl.textContent = list.length === allEntries.length
-      ? `${allEntries.length} entr${allEntries.length === 1 ? 'y' : 'ies'}`
-      : `${list.length} of ${allEntries.length} entr${allEntries.length === 1 ? 'y' : 'ies'}`;
-
-    if (currentView === 'list') renderList(list);
-    else renderMap(list);
+  function standaloneEntries() {
+    let list = allEntries.filter(e => !e.incident_id);
+    if (activeType !== 'all') list = list.filter(e => e.type === activeType);
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(e =>
+        e.title.toLowerCase().includes(q) ||
+        (e.review || '').toLowerCase().includes(q) ||
+        (e.tags || []).some(t => t.toLowerCase().includes(q))
+      );
+    }
+    return list;
   }
 
-  function renderList(list) {
-    const container = document.getElementById('entries');
-    const empty = document.getElementById('empty');
+  function render() {
+    const incidents = filteredIncidents();
+    const standalone = standaloneEntries();
+    const total = allIncidents.length;
+    const countEl = document.getElementById('results-count');
+    countEl.textContent = incidents.length === total
+      ? `${total} incident${total === 1 ? '' : 's'}`
+      : `${incidents.length} of ${total} incident${total === 1 ? '' : 's'}`;
 
-    if (list.length === 0) {
-      container.innerHTML = '';
-      empty.style.display = 'block';
+    if (currentView === 'list') renderList(incidents, standalone);
+    else renderMap(incidents);
+  }
+
+  function renderList(incidents, standalone) {
+    const grid = document.getElementById('incidents-grid');
+    const emptyEl = document.getElementById('empty');
+    const standaloneSection = document.getElementById('standalone-section');
+
+    if (incidents.length === 0 && standalone.length === 0) {
+      grid.innerHTML = '';
+      emptyEl.style.display = 'block';
+      standaloneSection.style.display = 'none';
       return;
     }
-    empty.style.display = 'none';
+    emptyEl.style.display = 'none';
 
-    container.innerHTML = list.map(e => `
+    grid.innerHTML = incidents.map(i => incidentCardHtml(i)).join('');
+
+    if (standalone.length > 0) {
+      standaloneSection.style.display = 'block';
+      document.getElementById('standalone-entries').innerHTML =
+        standalone.map(e => entryCardHtml(e, true)).join('');
+    } else {
+      standaloneSection.style.display = 'none';
+    }
+
+    grid.querySelectorAll('.incident-card-tag').forEach(btn => {
+      btn.addEventListener('click', ev => {
+        ev.preventDefault();
+        const tag = btn.dataset.tag;
+        const cloudBtn = [...document.querySelectorAll('.tag-pill')].find(b => b.textContent === tag);
+        toggleTag(tag, cloudBtn || btn);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    });
+  }
+
+  function incidentCardHtml(incident) {
+    const entryCount = incident.entry_count || 0;
+    const types = incident.entry_types || [];
+
+    const typeBadges = types.map(t =>
+      `<span class="type-badge type-badge--${t}">${t}</span>`
+    ).join('');
+
+    const tagPills = (incident.tags || []).map(t =>
+      `<button class="incident-card-tag" data-tag="${escHtml(t)}">${escHtml(t)}</button>`
+    ).join('');
+
+    return `
+      <article class="incident-card">
+        <div class="incident-card-body">
+          <div class="incident-card-header">
+            <h2 class="incident-card-title">
+              <a href="?incident=${escHtml(incident.slug)}">${escHtml(incident.title)}</a>
+            </h2>
+            <div class="incident-entry-count">
+              ${typeBadges}
+              <span class="entry-count-num">${entryCount} entr${entryCount === 1 ? 'y' : 'ies'}</span>
+            </div>
+          </div>
+          <div class="incident-card-meta">
+            ${incident.date ? `<span>${escHtml(incident.date)}</span>` : ''}
+            ${incident.date && incident.location_name ? '<span class="meta-sep">&middot;</span>' : ''}
+            ${incident.location_name ? `<span>${escHtml(incident.location_name)}</span>` : ''}
+          </div>
+          ${incident.description ? `<p class="incident-card-desc">${escHtml(incident.description)}</p>` : ''}
+          ${(incident.tags || []).length ? `<div class="incident-card-tags">${tagPills}</div>` : ''}
+        </div>
+      </article>
+    `;
+  }
+
+  function entryCardHtml(e, showLocation) {
+    return `
       <article class="entry-card">
         <div class="entry-type-col">
           <span class="type-badge type-badge--${e.type}">${e.type}</span>
@@ -120,7 +256,7 @@
           </div>
           ${e.review ? `<p class="entry-review">${escHtml(e.review)}</p>` : ''}
           <div class="entry-footer">
-            ${e.location_name ? `<span class="entry-location">&#9679; ${escHtml(e.location_name)}</span>` : ''}
+            ${showLocation && e.location_name ? `<span class="entry-location">&#9679; ${escHtml(e.location_name)}</span>` : ''}
             ${(e.tags || []).length ? `
               <div class="entry-tags">
                 ${e.tags.map(t => `<button class="entry-tag" data-tag="${escHtml(t)}">${escHtml(t)}</button>`).join('')}
@@ -128,20 +264,19 @@
           </div>
         </div>
       </article>
-    `).join('');
-
-    container.querySelectorAll('.entry-tag').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tag = btn.dataset.tag;
-        const cloudBtn = [...document.querySelectorAll('.tag-pill')].find(b => b.textContent === tag);
-        toggleTag(tag, cloudBtn || btn);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
-    });
+    `;
   }
 
-  function renderMap(list) {
-    const withLocation = list.filter(e => e.lat != null && e.lng != null);
+  function starsHtml(rating) {
+    let html = '';
+    for (let i = 1; i <= 5; i++) {
+      html += i <= rating ? '<span>&#9733;</span>' : '<span class="empty-star">&#9733;</span>';
+    }
+    return html;
+  }
+
+  function renderMap(incidents) {
+    const withLocation = incidents.filter(i => i.lat != null && i.lng != null);
     const noLocMsg = document.getElementById('map-no-location');
 
     if (!map) {
@@ -152,7 +287,6 @@
       }).addTo(map);
     }
 
-    // Clear existing markers
     markers.forEach(m => m.remove());
     markers = [];
 
@@ -162,32 +296,27 @@
     }
     noLocMsg.style.display = 'none';
 
-    const typeColors = { video: '#7ab0ff', article: '#7dcf8f', podcast: '#c98fff', book: '#ffb55a' };
-
-    withLocation.forEach(e => {
-      const color = typeColors[e.type] || '#aaa';
+    withLocation.forEach(incident => {
       const icon = L.divIcon({
         className: '',
-        html: `<div class="map-pin" style="background:${color};box-shadow:0 0 0 3px rgba(0,0,0,0.5)"></div>`,
+        html: `<div class="map-pin" style="background:#c94040;box-shadow:0 0 0 3px rgba(0,0,0,0.5)"></div>`,
         iconSize: [14, 14],
         iconAnchor: [7, 7]
       });
 
-      const stars = '★'.repeat(e.rating) + '☆'.repeat(5 - e.rating);
+      const entryCount = incident.entry_count || 0;
       const popup = L.popup({ className: 'map-popup' }).setContent(`
         <div class="popup-inner">
-          <span class="popup-type popup-type--${e.type}">${e.type}</span>
-          <a href="${escHtml(e.url)}" target="_blank" rel="noopener" class="popup-title">${escHtml(e.title)}</a>
-          <div class="popup-stars">${stars}</div>
-          <div class="popup-location">${escHtml(e.location_name)}</div>
+          <a href="?incident=${escHtml(incident.slug)}" class="popup-title">${escHtml(incident.title)}</a>
+          ${incident.date ? `<div class="popup-location">${escHtml(incident.date)}</div>` : ''}
+          <div class="popup-location">${entryCount} entr${entryCount === 1 ? 'y' : 'ies'}</div>
         </div>
       `);
 
-      const marker = L.marker([e.lat, e.lng], { icon }).addTo(map).bindPopup(popup);
+      const marker = L.marker([incident.lat, incident.lng], { icon }).addTo(map).bindPopup(popup);
       markers.push(marker);
     });
 
-    // Fit map to markers
     if (markers.length > 0) {
       const group = L.featureGroup(markers);
       map.fitBounds(group.getBounds().pad(0.2));

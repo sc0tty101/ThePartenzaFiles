@@ -19,49 +19,62 @@
   </header>
 
   <main>
-    <div class="controls">
-      <div class="search-wrap">
-        <input type="text" id="search" placeholder="Search titles, reviews, tags..." autocomplete="off">
-      </div>
-      <div class="filters">
-        <button class="filter-btn active" data-type="all">All</button>
-        <button class="filter-btn" data-type="video">Video</button>
-        <button class="filter-btn" data-type="article">Article</button>
-        <button class="filter-btn" data-type="podcast">Podcast</button>
-        <button class="filter-btn" data-type="book">Book</button>
-      </div>
-      <div class="view-sort-wrap">
-        <div class="view-toggle">
-          <button class="view-btn active" data-view="list" title="List view">&#9776; List</button>
-          <button class="view-btn" data-view="map" title="Map view">&#9679; Map</button>
+    <!-- Browse view -->
+    <div id="browse-view">
+      <div class="controls">
+        <div class="search-wrap">
+          <input type="text" id="search" placeholder="Search incidents, descriptions, tags..." autocomplete="off">
         </div>
-        <select id="sort">
-          <option value="newest">Newest first</option>
-          <option value="oldest">Oldest first</option>
-          <option value="rating-high">Rating: high to low</option>
-          <option value="rating-low">Rating: low to high</option>
-        </select>
+        <div class="filters">
+          <button class="filter-btn active" data-type="all">All</button>
+          <button class="filter-btn" data-type="video">Video</button>
+          <button class="filter-btn" data-type="article">Article</button>
+          <button class="filter-btn" data-type="podcast">Podcast</button>
+          <button class="filter-btn" data-type="book">Book</button>
+        </div>
+        <div class="view-sort-wrap">
+          <div class="view-toggle">
+            <button class="view-btn active" data-view="list" title="List view">&#9776; List</button>
+            <button class="view-btn" data-view="map" title="Map view">&#9679; Map</button>
+          </div>
+          <select id="sort">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="most-entries">Most entries</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="tag-cloud" class="tag-cloud"></div>
+      <div id="results-count" class="results-count"></div>
+
+      <!-- List view -->
+      <div id="view-list">
+        <div id="incidents-grid" class="incidents-grid"></div>
+        <div id="standalone-section" style="display:none">
+          <div class="standalone-separator">Standalone entries</div>
+          <div id="standalone-entries" class="entries-grid"></div>
+        </div>
+        <div id="empty" class="empty-state" style="display:none">
+          <p>No incidents found.</p>
+        </div>
+      </div>
+
+      <!-- Map view -->
+      <div id="view-map" style="display:none">
+        <div id="map"></div>
+        <p id="map-no-location" class="map-no-location" style="display:none">
+          No incidents with locations match the current filters.
+        </p>
       </div>
     </div>
 
-    <div id="tag-cloud" class="tag-cloud"></div>
-
-    <div id="results-count" class="results-count"></div>
-
-    <!-- List view -->
-    <div id="view-list">
-      <div id="entries" class="entries-grid"></div>
-      <div id="empty" class="empty-state" style="display:none">
-        <p>No entries found.</p>
+    <!-- Incident detail view -->
+    <div id="detail-view" style="display:none">
+      <div class="detail-back">
+        <a href="/" id="back-link" class="back-arrow">&larr; All incidents</a>
       </div>
-    </div>
-
-    <!-- Map view -->
-    <div id="view-map" style="display:none">
-      <div id="map"></div>
-      <p id="map-no-location" class="map-no-location" style="display:none">
-        No entries with locations match the current filters.
-      </p>
+      <div id="detail-content"></div>
     </div>
   </main>
 

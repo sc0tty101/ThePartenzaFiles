@@ -37,7 +37,8 @@
     <header class="admin-header">
       <a href="/" class="admin-logo">&#9664; The Partenza Files</a>
       <nav class="admin-nav">
-        <button class="tab-btn active" data-tab="entries">Entries</button>
+        <button class="tab-btn active" data-tab="incidents">Incidents</button>
+        <button class="tab-btn" data-tab="entries">Entries</button>
         <button class="tab-btn" data-tab="settings">Settings</button>
       </nav>
       <button id="logout-btn" class="logout-btn">Log out</button>
@@ -45,13 +46,21 @@
 
     <main class="admin-main">
 
+      <!-- INCIDENTS TAB -->
+      <div id="tab-incidents" class="tab-content">
+        <div class="admin-toolbar">
+          <h2>Incidents <span id="incident-count" class="count-badge"></span></h2>
+          <button id="new-incident-btn" class="btn-primary">+ New incident</button>
+        </div>
+        <div id="admin-incident-list" class="admin-entry-list"></div>
+      </div>
+
       <!-- ENTRIES TAB -->
-      <div id="tab-entries" class="tab-content">
+      <div id="tab-entries" class="tab-content" style="display:none">
         <div class="admin-toolbar">
           <h2>Entries <span id="entry-count" class="count-badge"></span></h2>
           <button id="new-entry-btn" class="btn-primary">+ New entry</button>
         </div>
-
         <div id="admin-entry-list" class="admin-entry-list"></div>
       </div>
 
@@ -82,17 +91,16 @@
             <p id="password-error" class="form-error"></p>
           </form>
         </div>
-
         <div class="settings-section">
           <h3>Backup &amp; restore</h3>
           <div class="backup-row">
             <div class="backup-col">
-              <p class="backup-desc">Download all entries as a JSON file.</p>
-              <a id="export-btn" href="/api/export" class="btn-primary btn-download">&#8595; Export entries</a>
+              <p class="backup-desc">Download all incidents and entries as a JSON file.</p>
+              <a id="export-btn" href="/api/export" class="btn-primary btn-download">&#8595; Export data</a>
             </div>
             <div class="backup-col">
-              <p class="backup-desc">Import from a previously exported JSON file. Existing entries (matched by ID) are skipped.</p>
-              <label class="btn-ghost btn-upload" for="import-file">&#8593; Import entries</label>
+              <p class="backup-desc">Import from a previously exported JSON file. Existing records (matched by ID) are skipped.</p>
+              <label class="btn-ghost btn-upload" for="import-file">&#8593; Import data</label>
               <input type="file" id="import-file" accept=".json" style="display:none">
               <span id="import-result" class="saved-msg"></span>
               <p id="import-error" class="form-error"></p>
@@ -102,6 +110,56 @@
       </div>
 
     </main>
+  </div>
+
+  <!-- Incident form modal -->
+  <div id="incident-modal" class="modal" style="display:none">
+    <div class="modal-overlay" id="incident-modal-overlay"></div>
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="incident-modal-title">New incident</h3>
+        <button class="modal-close" id="incident-modal-close">&times;</button>
+      </div>
+      <form id="incident-form">
+        <input type="hidden" id="incident-id">
+        <label>Title *
+          <input type="text" id="incident-title" required placeholder="e.g. Space Shuttle Challenger Disaster">
+        </label>
+        <label>Slug <span class="label-hint">(auto-generated, must be unique)</span>
+          <input type="text" id="incident-slug" placeholder="space-shuttle-challenger-disaster">
+        </label>
+        <div class="form-row">
+          <label>Date <span class="label-hint">(free text)</span>
+            <input type="text" id="incident-date" placeholder="January 28, 1986">
+          </label>
+          <label>Tags <span class="label-hint">(comma separated)</span>
+            <input type="text" id="incident-tags" placeholder="space, nasa, engineering">
+          </label>
+        </div>
+        <label>Description *
+          <textarea id="incident-description" rows="5" required placeholder="Overview of the event..."></textarea>
+        </label>
+        <label>Location <span class="label-hint">(optional)</span>
+          <div class="location-search-wrap">
+            <input type="text" id="incident-location-search" placeholder="Search for a place…" autocomplete="off">
+            <button type="button" id="incident-location-search-btn" class="btn-ghost btn-sm">Search</button>
+          </div>
+          <ul id="incident-location-results" class="location-results" style="display:none"></ul>
+          <div id="incident-location-selected" class="location-selected" style="display:none">
+            <span id="incident-location-selected-name"></span>
+            <button type="button" id="incident-location-clear-btn" class="location-clear">&times;</button>
+          </div>
+          <input type="hidden" id="incident-location-name">
+          <input type="hidden" id="incident-lat">
+          <input type="hidden" id="incident-lng">
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="btn-ghost" id="incident-cancel-btn">Cancel</button>
+          <button type="submit" class="btn-primary">Save incident</button>
+        </div>
+        <p id="incident-error" class="form-error"></p>
+      </form>
+    </div>
   </div>
 
   <!-- Entry form modal -->
@@ -141,6 +199,11 @@
             <input type="hidden" id="entry-rating" value="3">
           </label>
         </div>
+        <label>Incident <span class="label-hint">(optional)</span>
+          <select id="entry-incident">
+            <option value="">— None —</option>
+          </select>
+        </label>
         <label>Tags <span class="label-hint">(comma separated, e.g. aviation, fire, investigation)</span>
           <input type="text" id="entry-tags" placeholder="challenger, nasa, space">
         </label>
@@ -174,7 +237,7 @@
   <div id="delete-modal" class="modal" style="display:none">
     <div class="modal-overlay" id="delete-overlay"></div>
     <div class="modal-box modal-box--sm">
-      <h3>Delete entry?</h3>
+      <h3 id="delete-modal-heading">Delete?</h3>
       <p id="delete-confirm-title" class="delete-confirm-text"></p>
       <div class="modal-actions">
         <button class="btn-ghost" id="delete-cancel">Cancel</button>

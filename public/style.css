@@ -904,6 +904,194 @@ button, .btn-primary, .btn-ghost, .btn-danger {
   cursor: pointer;
 }
 
+/* ── Incident cards grid ── */
+.incidents-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.incident-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  transition: border-color 0.15s;
+}
+.incident-card:hover { border-color: var(--border2); }
+
+.incident-card-body {}
+
+.incident-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.incident-card-title {
+  font-size: 1rem;
+  font-weight: normal;
+  color: var(--text);
+  line-height: 1.35;
+  flex: 1;
+}
+.incident-card-title a { color: var(--text); transition: color 0.15s; }
+.incident-card-title a:hover { color: var(--accent); }
+
+.incident-entry-count {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.entry-count-num {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.incident-card-meta {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-bottom: 0.5rem;
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.meta-sep { color: var(--border2); }
+
+.incident-card-desc {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  font-style: italic;
+  margin-bottom: 0.65rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.incident-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+}
+
+.incident-card-tag {
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  padding: 0.15rem 0.45rem;
+  background: var(--tag-bg);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.incident-card-tag:hover { border-color: var(--border2); color: var(--text-muted); }
+
+/* ── Standalone entries separator ── */
+.standalone-separator {
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin: 2rem 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── Incident detail view ── */
+.detail-back {
+  margin-bottom: 1.5rem;
+}
+
+.back-arrow {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+.back-arrow:hover { color: var(--text-muted); }
+
+.incident-detail-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.incident-detail-title {
+  font-size: 1.6rem;
+  font-weight: normal;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+  line-height: 1.25;
+}
+
+.incident-detail-meta {
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.incident-detail-desc {
+  font-size: 0.98rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+  font-style: italic;
+  margin-bottom: 0.75rem;
+}
+
+.incident-detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.detail-entries-section {}
+
+.detail-entries-heading {
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+/* ── Sort select (view-sort-wrap) ── */
+#sort {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  outline: none;
+}
+#sort:focus { border-color: var(--border2); }
+#sort option { background: var(--bg3); }
+
 /* ── Responsive ── */
 @media (max-width: 600px) {
   .header-inner { flex-direction: column; align-items: flex-start; }
@@ -911,4 +1099,5 @@ button, .btn-primary, .btn-ghost, .btn-danger {
   .entry-card { grid-template-columns: 1fr; }
   .entry-type-col { width: auto; text-align: left; margin-bottom: 0.5rem; }
   .admin-entry { flex-wrap: wrap; }
+  .incidents-grid { grid-template-columns: 1fr; }
 }
