@@ -182,9 +182,22 @@
     document.getElementById('incident-form').reset();
     document.getElementById('incident-slug').dataset.manuallyEdited = '';
     clearIncidentLocation();
+    setImagePreview('');
     document.getElementById('incident-error').textContent = '';
     document.getElementById('incident-modal').style.display = 'flex';
     document.getElementById('incident-title').focus();
+  }
+
+  function setImagePreview(url) {
+    const preview = document.getElementById('incident-image-preview');
+    const img = document.getElementById('incident-image-preview-img');
+    if (url) {
+      img.src = url;
+      preview.style.display = 'block';
+    } else {
+      img.src = '';
+      preview.style.display = 'none';
+    }
   }
 
   function openEditIncidentModal(id) {
@@ -204,6 +217,9 @@
     } else {
       clearIncidentLocation();
     }
+    const imgUrl = incident.image_url || '';
+    document.getElementById('incident-image-url').value = imgUrl;
+    setImagePreview(imgUrl);
     document.getElementById('incident-error').textContent = '';
     document.getElementById('incident-modal').style.display = 'flex';
     document.getElementById('incident-title').focus();
@@ -427,6 +443,10 @@
     });
     document.getElementById('incident-location-clear-btn').addEventListener('click', clearIncidentLocation);
 
+    document.getElementById('incident-image-url').addEventListener('input', e => {
+      setImagePreview(e.target.value.trim());
+    });
+
     document.getElementById('incident-form').addEventListener('submit', async e => {
       e.preventDefault();
       const data = {
@@ -437,7 +457,8 @@
         description: document.getElementById('incident-description').value.trim(),
         location_name: document.getElementById('incident-location-name').value || null,
         lat: document.getElementById('incident-lat').value || null,
-        lng: document.getElementById('incident-lng').value || null
+        lng: document.getElementById('incident-lng').value || null,
+        image_url: document.getElementById('incident-image-url').value.trim() || null
       };
       const ok = await saveIncident(data);
       if (ok) {

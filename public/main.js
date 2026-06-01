@@ -58,13 +58,25 @@
     const content = document.getElementById('detail-content');
 
     content.innerHTML = `
-      <div class="incident-detail-header">
-        <h2 class="incident-detail-title">${escHtml(incident.title)}</h2>
+      ${incident.image_url ? `
+        <div class="incident-banner" style="background-image:url('${escHtml(incident.image_url)}')">
+          <div class="incident-banner-overlay">
+            <h2 class="incident-banner-title">${escHtml(incident.title)}</h2>
+            <div class="incident-banner-meta">
+              ${incident.date ? `<span>${escHtml(incident.date)}</span>` : ''}
+              ${incident.date && incident.location_name ? '<span class="meta-sep">&middot;</span>' : ''}
+              ${incident.location_name ? `<span>${escHtml(incident.location_name)}</span>` : ''}
+            </div>
+          </div>
+        </div>` : ''}
+      <div class="incident-detail-header${incident.image_url ? ' incident-detail-header--has-banner' : ''}">
+        ${!incident.image_url ? `<h2 class="incident-detail-title">${escHtml(incident.title)}</h2>` : ''}
+        ${!incident.image_url ? `
         <div class="incident-detail-meta">
           ${incident.date ? `<span>${escHtml(incident.date)}</span>` : ''}
           ${incident.date && incident.location_name ? '<span class="meta-sep">&middot;</span>' : ''}
           ${incident.location_name ? `<span>${escHtml(incident.location_name)}</span>` : ''}
-        </div>
+        </div>` : ''}
         ${incident.description ? `<p class="incident-detail-desc">${escHtml(incident.description)}</p>` : ''}
         ${(incident.tags || []).length ? `
           <div class="incident-detail-tags">
@@ -220,7 +232,10 @@
     ).join('');
 
     return `
-      <article class="incident-card">
+      <article class="incident-card${incident.image_url ? ' incident-card--has-image' : ''}">
+        ${incident.image_url ? `
+          <a href="?incident=${escHtml(incident.slug)}" class="incident-card-thumb" style="background-image:url('${escHtml(incident.image_url)}')" aria-hidden="true"></a>
+        ` : ''}
         <div class="incident-card-body">
           <div class="incident-card-header">
             <h2 class="incident-card-title">
