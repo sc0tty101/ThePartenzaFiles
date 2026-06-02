@@ -76,7 +76,7 @@
     document.getElementById('settings-title').value = config.siteTitle || '';
     document.getElementById('settings-tagline').value = config.siteTagline || '';
 
-    await Promise.all([loadIncidents(), loadEntries()]);
+    await Promise.all([loadIncidents(), loadEntries()]); renderAdminEntryList();
     attachAdminEvents();
   }
 
@@ -90,7 +90,6 @@
   async function loadEntries() {
     const res = await fetch('/api/entries');
     entries = await res.json();
-    renderAdminEntryList();
   }
 
   function renderAdminIncidentList() {
@@ -438,7 +437,7 @@
       : `/api/entries/${deletingId}`;
     await fetch(endpoint, { method: 'DELETE' });
     closeDeleteModal();
-    await Promise.all([loadIncidents(), loadEntries()]);
+    await Promise.all([loadIncidents(), loadEntries()]); renderAdminEntryList();
   }
 
   function attachAdminEvents() {
@@ -501,7 +500,7 @@
       if (ok) {
         closeIncidentModal();
         document.getElementById('incident-slug').dataset.manuallyEdited = '';
-        await Promise.all([loadIncidents(), loadEntries()]);
+        await Promise.all([loadIncidents(), loadEntries()]); renderAdminEntryList();
       }
     });
 
@@ -555,7 +554,7 @@
       const ok = await saveEntry(data);
       if (ok) {
         closeEntryModal();
-        await Promise.all([loadIncidents(), loadEntries()]);
+        await Promise.all([loadIncidents(), loadEntries()]); renderAdminEntryList();
       }
     });
 
@@ -623,7 +622,7 @@
       } else {
         resultEl.textContent = `Imported ${json.inserted} record${json.inserted === 1 ? '' : 's'}${json.skipped ? `, ${json.skipped} skipped` : ''}.`;
         setTimeout(() => resultEl.textContent = '', 4000);
-        await Promise.all([loadIncidents(), loadEntries()]);
+        await Promise.all([loadIncidents(), loadEntries()]); renderAdminEntryList();
       }
     });
 
