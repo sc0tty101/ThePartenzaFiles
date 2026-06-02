@@ -124,32 +124,90 @@
     });
   }
 
-  function renderAdminEntryList() {
+  function renderAdminEntryList(filterText) {
     const list = document.getElementById('admin-entry-list');
     document.getElementById('entry-count').textContent = entries.length;
 
-    if (entries.length === 0) {
+    if (incidents.length === 0 && entries.length === 0) {
       list.innerHTML = '<p style="color:var(--text-dim);padding:2rem 0;font-size:0.9rem;">No entries yet. Add your first one.</p>';
       return;
     }
 
-    const sorted = [...entries].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    list.innerHTML = sorted.map(e => {
-      const incident = e.incident_id ? incidents.find(i => i.id === e.incident_id) : null;
+    const q = (filterText || '').toLowerCase().trim();
+
+    const sortedIncidents = [...incidents].sort((a, b) => a.title.localeCompare(b.title));
+    const entriesByIncident = {};
+    entries.forEach(e => {
+      const key = e.incident_id || '__standalone__';
+      if (!entriesByIncident[key]) entriesByIncident[key] = [];
+      entriesByIncident[key].push(e);
+    });
+
+    function entryRowHtml(e) {
       return `
-        <div class="admin-entry" data-id="${e.id}">
+        <div class="admin-entry admin-entry--nested" data-id="${e.id}">
           <div class="admin-entry-info">
             <div class="admin-entry-title">${escHtml(e.title)}</div>
-            <div class="admin-entry-meta">${e.type} &middot; ${'★'.repeat(e.rating)}${incident ? ` &middot; ${escHtml(incident.title)}` : ''} &middot; ${(e.tags || []).join(', ') || 'no tags'}</div>
+            <div class="admin-entry-meta">
+              <span class="entry-type-chip entry-type-chip--${e.type}">${e.type}</span>
+              ${'★'.repeat(e.rating || 0)}<span style="color:var(--text-dim)">${'★'.repeat(5 - (e.rating || 0))}</span>
+              ${(e.tags || []).length ? `&middot; ${escHtml((e.tags || []).join(', '))}` : ''}
+            </div>
           </div>
           <div class="admin-entry-actions">
             <button class="btn-sm edit-btn" data-id="${e.id}">Edit</button>
             <button class="btn-sm btn-sm--danger delete-btn" data-id="${e.id}">Delete</button>
           </div>
-        </div>
-      `;
-    }).join('');
+        </div>`;
+    }
 
+    function incidentGroupHtml(incident) {
+      const incEntries = entriesByIncident[incident.id] || [];
+      const matchesFilter = !q || incident.title.toLowerCase().includes(q);
+      if (!matchesFilter) return '';
+      const openAttr = (incEntries.length > 0 || !q) ? 'open' : '';
+      return `
+        <details class="entry-group" ${openAttr} data-incident-id="${incident.id}">
+          <summary class="entry-group-summary">
+            <span class="entry-group-title">${escHtml(incident.title)}</span>
+            <span class="entry-group-count">${incEntries.length} entr${incEntries.length === 1 ? 'y' : 'ies'}</span>
+            <button type="button" class="btn-sm add-entry-to-incident-btn" data-incident-id="${incident.id}" data-incident-title="${escHtml(incident.title)}">+ Add entry</button>
+          </summary>
+          <div class="entry-group-body">
+            ${incEntries.length === 0
+              ? '<p class="entry-group-empty">No entries yet.</p>'
+              : incEntries.map(entryRowHtml).join('')}
+          </div>
+        </details>`;
+    }
+
+    const incidentGroups = sortedIncidents.map(incidentGroupHtml).join('');
+    const standalone = entriesByIncident['__standalone__'] || [];
+    const standaloneVisible = !q;
+
+    const standaloneHtml = standaloneVisible ? `
+      <details class="entry-group entry-group--standalone" ${standalone.length > 0 ? 'open' : ''}>
+        <summary class="entry-group-summary">
+          <span class="entry-group-title">Standalone entries</span>
+          <span class="entry-group-count">${standalone.length} entr${standalone.length === 1 ? 'y' : 'ies'}</span>
+          <button type="button" class="btn-sm add-entry-to-incident-btn" data-incident-id="" data-incident-title="">+ Add entry</button>
+        </summary>
+        <div class="entry-group-body">
+          ${standalone.length === 0
+            ? '<p class="entry-group-empty">No standalone entries.</p>'
+            : standalone.map(entryRowHtml).join('')}
+        </div>
+      </details>` : '';
+
+    list.innerHTML = incidentGroups + standaloneHtml;
+
+    list.querySelectorAll('.add-entry-to-incident-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        openNewEntryModal(btn.dataset.incidentId || null);
+      });
+    });
     list.querySelectorAll('.edit-btn').forEach(btn => {
       btn.addEventListener('click', () => openEditEntryModal(btn.dataset.id));
     });
@@ -281,13 +339,13 @@
     });
   }
 
-  function openNewEntryModal() {
+  function openNewEntryModal(incidentId) {
     editingEntryId = null;
     document.getElementById('modal-title').textContent = 'New entry';
     document.getElementById('entry-id').value = '';
     document.getElementById('entry-form').reset();
     setStars(3);
-    document.getElementById('entry-incident').value = '';
+    document.getElementById('entry-incident').value = incidentId || '';
     document.getElementById('entry-error').textContent = '';
     document.getElementById('entry-modal').style.display = 'flex';
     document.getElementById('entry-title').focus();
@@ -445,7 +503,10 @@
       }
     });
 
-    document.getElementById('new-entry-btn').addEventListener('click', openNewEntryModal);
+    document.getElementById('new-entry-btn').addEventListener('click', () => openNewEntryModal(null));
+    document.getElementById('entries-search').addEventListener('input', e => {
+      renderAdminEntryList(e.target.value);
+    });
     document.getElementById('modal-close').addEventListener('click', closeEntryModal);
     document.getElementById('cancel-btn').addEventListener('click', closeEntryModal);
     document.getElementById('modal-overlay').addEventListener('click', closeEntryModal);
