@@ -219,10 +219,11 @@
           </select>
         </label>
         <label>Tags <span class="label-hint">(comma separated, e.g. aviation, fire, investigation)</span>
-          <input type="text" id="entry-tags" placeholder="challenger, nasa, space">
+          <input type="text" id="entry-tags" placeholder="challenger, nasa, space" autocomplete="off">
+          <div id="entry-tag-cloud" class="modal-tag-cloud"></div>
         </label>
-        <label>Review *
-          <textarea id="entry-review" rows="5" required placeholder="What makes this worth reading/watching? What does it cover well?"></textarea>
+        <label>Review <span class="label-hint">(optional)</span>
+          <textarea id="entry-review" rows="5" placeholder="What makes this worth reading/watching? What does it cover well?"></textarea>
         </label>
         <div class="modal-actions">
           <button type="button" class="btn-ghost" id="cancel-btn">Cancel</button>

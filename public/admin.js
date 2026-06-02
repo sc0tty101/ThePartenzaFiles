@@ -340,6 +340,45 @@
     });
   }
 
+  function buildEntryTagCloud() {
+    const tagSet = new Set();
+    incidents.forEach(i => (i.tags || []).forEach(t => tagSet.add(t)));
+    entries.forEach(e => (e.tags || []).forEach(t => tagSet.add(t)));
+    const sorted = [...tagSet].sort();
+    const cloud = document.getElementById('entry-tag-cloud');
+    if (!cloud) return;
+    cloud.innerHTML = sorted.map(t =>
+      `<button type="button" class="modal-tag-pill" data-tag="${escHtml(t)}">${escHtml(t)}</button>`
+    ).join('');
+    cloud.querySelectorAll('.modal-tag-pill').forEach(btn => {
+      btn.addEventListener('click', () => toggleEntryTag(btn.dataset.tag, btn));
+    });
+  }
+
+  function syncTagCloudToInput() {
+    const current = getEntryTags();
+    document.querySelectorAll('#entry-tag-cloud .modal-tag-pill').forEach(btn => {
+      btn.classList.toggle('active', current.includes(btn.dataset.tag));
+    });
+  }
+
+  function getEntryTags() {
+    return document.getElementById('entry-tags').value
+      .split(',').map(t => t.trim()).filter(Boolean);
+  }
+
+  function toggleEntryTag(tag, btn) {
+    let tags = getEntryTags();
+    if (tags.includes(tag)) {
+      tags = tags.filter(t => t !== tag);
+      btn.classList.remove('active');
+    } else {
+      tags.push(tag);
+      btn.classList.add('active');
+    }
+    document.getElementById('entry-tags').value = tags.join(', ');
+  }
+
   function openNewEntryModal(incidentId) {
     editingEntryId = null;
     document.getElementById('modal-title').textContent = 'New entry';
@@ -348,6 +387,8 @@
     setStars(null);
     document.getElementById('entry-incident').value = incidentId || '';
     document.getElementById('entry-error').textContent = '';
+    buildEntryTagCloud();
+    syncTagCloudToInput();
     document.getElementById('entry-modal').style.display = 'flex';
     document.getElementById('entry-title').focus();
   }
@@ -366,6 +407,8 @@
     document.getElementById('entry-incident').value = entry.incident_id || '';
     setStars(entry.rating != null ? entry.rating : null);
     document.getElementById('entry-error').textContent = '';
+    buildEntryTagCloud();
+    syncTagCloudToInput();
     document.getElementById('entry-modal').style.display = 'flex';
     document.getElementById('entry-title').focus();
   }
@@ -505,6 +548,7 @@
     });
 
     document.getElementById('new-entry-btn').addEventListener('click', () => openNewEntryModal(null));
+    document.getElementById('entry-tags').addEventListener('input', syncTagCloudToInput);
     document.getElementById('entries-search').addEventListener('input', e => {
       renderAdminEntryList(e.target.value);
     });
