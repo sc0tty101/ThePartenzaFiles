@@ -220,6 +220,7 @@
     const imgUrl = incident.image_url || '';
     document.getElementById('incident-image-url').value = imgUrl;
     setImagePreview(imgUrl);
+    document.getElementById('incident-is-fictional').checked = !!incident.is_fictional;
     document.getElementById('incident-error').textContent = '';
     document.getElementById('incident-modal').style.display = 'flex';
     document.getElementById('incident-title').focus();
@@ -286,7 +287,6 @@
     document.getElementById('entry-id').value = '';
     document.getElementById('entry-form').reset();
     setStars(3);
-    clearEntryLocation();
     document.getElementById('entry-incident').value = '';
     document.getElementById('entry-error').textContent = '';
     document.getElementById('entry-modal').style.display = 'flex';
@@ -306,33 +306,9 @@
     document.getElementById('entry-review').value = entry.review || '';
     document.getElementById('entry-incident').value = entry.incident_id || '';
     setStars(entry.rating || 3);
-    if (entry.location_name && entry.lat != null) {
-      setEntryLocation(entry.location_name, entry.lat, entry.lng);
-    } else {
-      clearEntryLocation();
-    }
     document.getElementById('entry-error').textContent = '';
     document.getElementById('entry-modal').style.display = 'flex';
     document.getElementById('entry-title').focus();
-  }
-
-  function setEntryLocation(name, lat, lng) {
-    document.getElementById('entry-location-name').value = name;
-    document.getElementById('entry-lat').value = lat;
-    document.getElementById('entry-lng').value = lng;
-    document.getElementById('entry-location-search').value = '';
-    document.getElementById('location-results').style.display = 'none';
-    document.getElementById('location-selected-name').textContent = name;
-    document.getElementById('location-selected').style.display = 'flex';
-  }
-
-  function clearEntryLocation() {
-    document.getElementById('entry-location-name').value = '';
-    document.getElementById('entry-lat').value = '';
-    document.getElementById('entry-lng').value = '';
-    document.getElementById('entry-location-search').value = '';
-    document.getElementById('location-results').style.display = 'none';
-    document.getElementById('location-selected').style.display = 'none';
   }
 
   function closeEntryModal() {
@@ -458,7 +434,8 @@
         location_name: document.getElementById('incident-location-name').value || null,
         lat: document.getElementById('incident-lat').value || null,
         lng: document.getElementById('incident-lng').value || null,
-        image_url: document.getElementById('incident-image-url').value.trim() || null
+        image_url: document.getElementById('incident-image-url').value.trim() || null,
+        is_fictional: document.getElementById('incident-is-fictional').checked
       };
       const ok = await saveIncident(data);
       if (ok) {
@@ -490,18 +467,7 @@
       setStars(currentRating);
     });
 
-    document.getElementById('location-search-btn').addEventListener('click', () => {
-      geocodeSearch('entry-location-search', 'location-results', setEntryLocation);
-    });
-    document.getElementById('entry-location-search').addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); geocodeSearch('entry-location-search', 'location-results', setEntryLocation); }
-    });
-    document.getElementById('location-clear-btn').addEventListener('click', clearEntryLocation);
-
     document.addEventListener('click', e => {
-      if (!e.target.closest('#entry-location-search') && !e.target.closest('#location-results') && !e.target.closest('#location-search-btn')) {
-        document.getElementById('location-results').style.display = 'none';
-      }
       if (!e.target.closest('#incident-location-search') && !e.target.closest('#incident-location-results') && !e.target.closest('#incident-location-search-btn')) {
         document.getElementById('incident-location-results').style.display = 'none';
       }
@@ -516,10 +482,7 @@
         tags: document.getElementById('entry-tags').value,
         review: document.getElementById('entry-review').value.trim(),
         rating: document.getElementById('entry-rating').value,
-        incident_id: document.getElementById('entry-incident').value || null,
-        location_name: document.getElementById('entry-location-name').value || null,
-        lat: document.getElementById('entry-lat').value || null,
-        lng: document.getElementById('entry-lng').value || null
+        incident_id: document.getElementById('entry-incident').value || null
       };
       const ok = await saveEntry(data);
       if (ok) {
