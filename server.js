@@ -63,7 +63,8 @@ async function initDb() {
     VALUES
       ('passwordHash', '$2b$10$placeholder'),
       ('siteTitle', 'The Partenza Files'),
-      ('siteTagline', 'A curated archive of accidents, disasters, and the stories they leave behind.')
+      ('siteTagline', 'A curated archive of accidents, disasters, and the stories they leave behind.'),
+      ('entryTypes', '["video","article","podcast","book"]')
     ON CONFLICT (key) DO NOTHING;
   `);
 
@@ -378,6 +379,21 @@ app.get('/api/entries', async (req, res) => {
 app.get('/api/config', async (req, res) => {
   const config = await getConfig();
   res.json({ siteTitle: config.siteTitle, siteTagline: config.siteTagline });
+});
+
+app.get('/api/entry-types', async (req, res) => {
+  const config = await getConfig();
+  const types = config.entryTypes ? JSON.parse(config.entryTypes) : ['video', 'article', 'podcast', 'book'];
+  res.json(types);
+});
+
+app.put('/api/entry-types', requireAuth, async (req, res) => {
+  const { types } = req.body;
+  if (!Array.isArray(types) || types.some(t => typeof t !== 'string' || !t.trim())) {
+    return res.status(400).json({ error: 'types must be a non-empty array of strings' });
+  }
+  await setConfig('entryTypes', JSON.stringify(types.map(t => t.trim().toLowerCase())));
+  res.json({ ok: true });
 });
 
 app.post('/api/login', async (req, res) => {

@@ -95,6 +95,16 @@
           </form>
         </div>
         <div class="settings-section">
+          <h3>Entry types</h3>
+          <p class="settings-desc">Types available when adding or editing an entry.</p>
+          <div id="entry-types-list" class="entry-types-list"></div>
+          <form id="add-entry-type-form" class="add-entry-type-form">
+            <input type="text" id="new-entry-type" placeholder="e.g. documentary" autocomplete="off" maxlength="40">
+            <button type="submit" class="btn-primary">Add type</button>
+            <p id="entry-type-error" class="form-error"></p>
+          </form>
+        </div>
+        <div class="settings-section">
           <h3>Backup &amp; restore</h3>
           <div class="backup-row">
             <div class="backup-col">
@@ -195,10 +205,6 @@
           <label>Type *
             <select id="entry-type" required>
               <option value="">Select type</option>
-              <option value="video">Video</option>
-              <option value="article">Article</option>
-              <option value="podcast">Podcast</option>
-              <option value="book">Book</option>
             </select>
           </label>
           <label>Rating

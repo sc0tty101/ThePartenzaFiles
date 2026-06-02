@@ -1,6 +1,7 @@
 (() => {
   let entries = [];
   let incidents = [];
+  let entryTypes = [];
   let editingEntryId = null;
   let editingIncidentId = null;
   let deletingId = null;
@@ -76,7 +77,7 @@
     document.getElementById('settings-title').value = config.siteTitle || '';
     document.getElementById('settings-tagline').value = config.siteTagline || '';
 
-    await Promise.all([loadIncidents(), loadEntries()]); renderAdminEntryList();
+    await Promise.all([loadIncidents(), loadEntries(), loadEntryTypes()]); renderAdminEntryList();
     attachAdminEvents();
   }
 
@@ -90,6 +91,72 @@
   async function loadEntries() {
     const res = await fetch('/api/entries');
     entries = await res.json();
+  }
+
+  async function loadEntryTypes() {
+    const res = await fetch('/api/entry-types');
+    entryTypes = await res.json();
+    populateEntryTypeSelect();
+    renderEntryTypeSettings();
+  }
+
+  function populateEntryTypeSelect() {
+    const select = document.getElementById('entry-type');
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">Select type</option>';
+    entryTypes.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = t.charAt(0).toUpperCase() + t.slice(1);
+      select.appendChild(opt);
+    });
+    if (currentVal) select.value = currentVal;
+  }
+
+  function renderEntryTypeSettings() {
+    const list = document.getElementById('entry-types-list');
+    if (!list) return;
+    if (entryTypes.length === 0) {
+      list.innerHTML = '<p style="color:var(--text-dim);font-size:0.85rem;">No types defined.</p>';
+      return;
+    }
+    list.innerHTML = entryTypes.map(t => `
+      <div class="entry-type-pill">
+        <span>${escHtml(t)}</span>
+        <button type="button" class="entry-type-delete-btn" data-type="${escHtml(t)}" aria-label="Remove ${escHtml(t)}">&times;</button>
+      </div>
+    `).join('');
+    list.querySelectorAll('.entry-type-delete-btn').forEach(btn => {
+      btn.addEventListener('click', () => removeEntryType(btn.dataset.type));
+    });
+  }
+
+  async function removeEntryType(type) {
+    const inUse = entries.some(e => e.type === type);
+    if (inUse) {
+      document.getElementById('entry-type-error').textContent =
+        `"${type}" is used by existing entries and cannot be removed.`;
+      setTimeout(() => { document.getElementById('entry-type-error').textContent = ''; }, 4000);
+      return;
+    }
+    const updated = entryTypes.filter(t => t !== type);
+    await saveEntryTypes(updated);
+  }
+
+  async function saveEntryTypes(types) {
+    const res = await fetch('/api/entry-types', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ types })
+    });
+    if (res.ok) {
+      entryTypes = types;
+      populateEntryTypeSelect();
+      renderEntryTypeSettings();
+    } else {
+      const { error } = await res.json();
+      document.getElementById('entry-type-error').textContent = error || 'Save failed.';
+    }
   }
 
   function renderAdminIncidentList() {
@@ -634,6 +701,21 @@
         const { error } = await res.json();
         document.getElementById('password-error').textContent = error;
       }
+    });
+
+    document.getElementById('add-entry-type-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const input = document.getElementById('new-entry-type');
+      const val = input.value.trim().toLowerCase();
+      const errorEl = document.getElementById('entry-type-error');
+      errorEl.textContent = '';
+      if (!val) return;
+      if (entryTypes.includes(val)) {
+        errorEl.textContent = `"${val}" already exists.`;
+        return;
+      }
+      await saveEntryTypes([...entryTypes, val]);
+      input.value = '';
     });
 
     document.getElementById('import-file').addEventListener('change', async e => {
