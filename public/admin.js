@@ -220,6 +220,7 @@
     const imgUrl = incident.image_url || '';
     document.getElementById('incident-image-url').value = imgUrl;
     setImagePreview(imgUrl);
+    document.getElementById('incident-is-fictional').checked = !!incident.is_fictional;
     document.getElementById('incident-error').textContent = '';
     document.getElementById('incident-modal').style.display = 'flex';
     document.getElementById('incident-title').focus();
@@ -458,7 +459,8 @@
         location_name: document.getElementById('incident-location-name').value || null,
         lat: document.getElementById('incident-lat').value || null,
         lng: document.getElementById('incident-lng').value || null,
-        image_url: document.getElementById('incident-image-url').value.trim() || null
+        image_url: document.getElementById('incident-image-url').value.trim() || null,
+        is_fictional: document.getElementById('incident-is-fictional').checked
       };
       const ok = await saveIncident(data);
       if (ok) {
