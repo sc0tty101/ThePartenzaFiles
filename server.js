@@ -89,7 +89,8 @@ async function seedData() {
       date: 'January 28, 1986',
       location_name: 'Kennedy Space Center, Florida, USA',
       lat: 28.5729, lng: -80.6490,
-      tags: ['space', 'nasa', 'challenger', 'engineering']
+      tags: ['space', 'nasa', 'challenger', 'engineering'],
+      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Challenger_explosion.jpg/1280px-Challenger_explosion.jpg'
     },
     {
       title: 'Überlingen Mid-Air Collision',
@@ -97,7 +98,8 @@ async function seedData() {
       date: 'July 1, 2002',
       location_name: 'Überlingen, Germany',
       lat: 47.7606, lng: 9.1611,
-      tags: ['aviation', 'atc', 'collision', 'europe']
+      tags: ['aviation', 'atc', 'collision', 'europe'],
+      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Tupolev_Tu-154_Bashkirian_Airlines.jpg/1280px-Tupolev_Tu-154_Bashkirian_Airlines.jpg'
     },
     {
       title: 'Three Mile Island Accident',
@@ -105,7 +107,8 @@ async function seedData() {
       date: 'March 28, 1979',
       location_name: 'Three Mile Island, Pennsylvania, USA',
       lat: 40.1533, lng: -76.7252,
-      tags: ['systems', 'theory', 'nuclear', 'engineering']
+      tags: ['systems', 'theory', 'nuclear', 'engineering'],
+      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Three_Mile_Island_2_-_just_before_the_cooling_towers_were_demolished.jpg/1280px-Three_Mile_Island_2_-_just_before_the_cooling_towers_were_demolished.jpg'
     },
     {
       title: 'Demolition of Pruitt-Igoe',
@@ -113,7 +116,8 @@ async function seedData() {
       date: '1972–1976',
       location_name: 'St. Louis, Missouri, USA',
       lat: 38.6270, lng: -90.1994,
-      tags: ['architecture', 'housing', 'urban', 'collapse']
+      tags: ['architecture', 'housing', 'urban', 'collapse'],
+      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Pruitt-igoe_collapse-series.jpg/1280px-Pruitt-igoe_collapse-series.jpg'
     },
     {
       title: 'Fukushima Daiichi Nuclear Disaster',
@@ -121,7 +125,8 @@ async function seedData() {
       date: 'March 11, 2011',
       location_name: 'Fukushima Daiichi, Japan',
       lat: 37.4215, lng: 141.0329,
-      tags: ['nuclear', 'japan', 'fukushima', 'tsunami']
+      tags: ['nuclear', 'japan', 'fukushima', 'tsunami'],
+      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Fukushima_I_by_Digital_Globe.jpg/1280px-Fukushima_I_by_Digital_Globe.jpg'
     },
     {
       title: 'BP Texas City Refinery Explosion',
@@ -129,7 +134,8 @@ async function seedData() {
       date: 'March 23, 2005',
       location_name: 'Texas City, Texas, USA',
       lat: 29.3838, lng: -94.9027,
-      tags: ['industrial', 'explosion', 'bp', 'texas']
+      tags: ['industrial', 'explosion', 'bp', 'texas'],
+      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Texas_City_Refinery_explosion.jpg/1280px-Texas_City_Refinery_explosion.jpg'
     },
     {
       title: 'Flint Water Crisis',
@@ -137,7 +143,8 @@ async function seedData() {
       date: '2014–2019',
       location_name: 'Flint, Michigan, USA',
       lat: 43.0125, lng: -83.6875,
-      tags: ['water', 'flint', 'infrastructure', 'public-health']
+      tags: ['water', 'flint', 'infrastructure', 'public-health'],
+      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Flint_Water_Crisis_2016.jpg/1280px-Flint_Water_Crisis_2016.jpg'
     },
     {
       title: 'Ramstein Airshow Disaster',
@@ -145,7 +152,8 @@ async function seedData() {
       date: 'August 28, 1988',
       location_name: 'Ramstein Air Base, Germany',
       lat: 49.4369, lng: 7.6003,
-      tags: ['aviation', 'airshow', 'germany', 'military']
+      tags: ['aviation', 'airshow', 'germany', 'military'],
+      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Ramstein_airshow_disaster.jpg/1280px-Ramstein_airshow_disaster.jpg'
     }
   ];
 
