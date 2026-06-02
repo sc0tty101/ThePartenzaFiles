@@ -47,7 +47,8 @@
     const res = await fetch(`/api/incidents/by-slug/${encodeURIComponent(slug)}`);
     if (!res.ok) {
       document.getElementById('detail-content').innerHTML =
-        '<p class="empty-state">Incident not found.</p>';
+        '<div class="empty-state"><p>Incident not found.</p>' +
+        '<p><a href="/" class="back-arrow">&larr; Back to all incidents</a></p></div>';
       return;
     }
     const incident = await res.json();
@@ -316,7 +317,7 @@
     withLocation.forEach(incident => {
       const icon = L.divIcon({
         className: '',
-        html: `<div class="map-pin" style="background:#c94040;box-shadow:0 0 0 3px rgba(0,0,0,0.5)"></div>`,
+        html: `<div class="map-pin" style="background:var(--accent);box-shadow:0 0 0 3px rgba(0,0,0,0.5)"></div>`,
         iconSize: [14, 14],
         iconAnchor: [7, 7]
       });
