@@ -1215,6 +1215,107 @@ button, .btn-primary, .btn-ghost, .btn-danger {
   cursor: pointer;
 }
 
+/* ── Entries search ── */
+.entries-search-wrap {
+  margin-bottom: 1.25rem;
+}
+.entries-search-wrap input {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  outline: none;
+  box-sizing: border-box;
+}
+.entries-search-wrap input:focus { border-color: var(--border2); }
+
+/* ── Entry groups (accordion) ── */
+.entry-group {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+  background: var(--bg2);
+  overflow: hidden;
+}
+.entry-group--standalone {
+  margin-top: 1.5rem;
+  border-color: var(--border);
+  opacity: 0.85;
+}
+.entry-group-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.entry-group-summary::-webkit-details-marker { display: none; }
+.entry-group-summary::before {
+  content: '▶';
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+.entry-group[open] > .entry-group-summary::before {
+  transform: rotate(90deg);
+}
+.entry-group-title {
+  flex: 1;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.entry-group-count {
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.entry-group-body {
+  border-top: 1px solid var(--border);
+  padding: 0.25rem 0;
+}
+.entry-group-empty {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  padding: 0.75rem 1rem;
+  margin: 0;
+}
+.admin-entry--nested {
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0.6rem 1rem;
+}
+.admin-entry--nested:last-child { border-bottom: none; }
+
+/* entry type chip (in admin list) */
+.entry-type-chip {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.1em 0.4em;
+  border-radius: 3px;
+  margin-right: 0.3em;
+}
+.entry-type-chip--video    { background: rgba(201,64,64,0.15);  color: #c94040; }
+.entry-type-chip--article  { background: rgba(64,130,201,0.15); color: #4082c9; }
+.entry-type-chip--podcast  { background: rgba(130,64,201,0.15); color: #8240c9; }
+.entry-type-chip--book     { background: rgba(64,180,100,0.15); color: #40b464; }
+
 /* ── Responsive ── */
 @media (max-width: 600px) {
   .header-inner { flex-direction: column; align-items: flex-start; }
