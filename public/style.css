@@ -726,6 +726,7 @@ button, .btn-primary, .btn-ghost, .btn-danger {
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .view-toggle {
