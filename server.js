@@ -74,6 +74,8 @@ async function initDb() {
     ALTER TABLE entries ADD COLUMN IF NOT EXISTS incident_id UUID REFERENCES incidents(id) ON DELETE SET NULL;
     ALTER TABLE incidents ADD COLUMN IF NOT EXISTS image_url TEXT;
     ALTER TABLE incidents ADD COLUMN IF NOT EXISTS is_fictional BOOLEAN DEFAULT FALSE;
+    ALTER TABLE entries ALTER COLUMN rating DROP DEFAULT;
+    ALTER TABLE entries ALTER COLUMN rating DROP NOT NULL;
   `);
 
   await seedData();
@@ -419,7 +421,7 @@ app.post('/api/entries', requireAuth, async (req, res) => {
     `INSERT INTO entries (id, title, url, type, tags, review, rating, location_name, lat, lng, incident_id)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
     [uuidv4(), req.body.title, req.body.url, req.body.type, tags, req.body.review,
-     parseInt(req.body.rating) || 3,
+     req.body.rating != null && req.body.rating !== '' ? parseInt(req.body.rating) : null,
      req.body.location_name || null,
      req.body.lat ? parseFloat(req.body.lat) : null,
      req.body.lng ? parseFloat(req.body.lng) : null,
@@ -435,7 +437,7 @@ app.put('/api/entries/:id', requireAuth, async (req, res) => {
      location_name=$7, lat=$8, lng=$9, incident_id=$10, updated_at=NOW()
      WHERE id=$11 RETURNING *`,
     [req.body.title, req.body.url, req.body.type, tags, req.body.review,
-     parseInt(req.body.rating) || 3,
+     req.body.rating != null && req.body.rating !== '' ? parseInt(req.body.rating) : null,
      req.body.location_name || null,
      req.body.lat ? parseFloat(req.body.lat) : null,
      req.body.lng ? parseFloat(req.body.lng) : null,
@@ -499,7 +501,8 @@ app.post('/api/import', requireAuth, express.json({ limit: '10mb' }), async (req
       `INSERT INTO entries (id, title, url, type, tags, review, rating, location_name, lat, lng, incident_id, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        ON CONFLICT (id) DO NOTHING`,
-      [id, entry.title, entry.url, entry.type, tags, entry.review || '', parseInt(entry.rating) || 3,
+      [id, entry.title, entry.url, entry.type, tags, entry.review || '',
+       entry.rating != null && entry.rating !== '' ? parseInt(entry.rating) : null,
        entry.location_name || null,
        entry.lat ? parseFloat(entry.lat) : null,
        entry.lng ? parseFloat(entry.lng) : null,
@@ -541,7 +544,7 @@ function normalizeEntry(row) {
     type: row.type,
     tags: row.tags || [],
     review: row.review,
-    rating: row.rating,
+    rating: row.rating != null ? parseInt(row.rating) : null,
     location_name: row.location_name || null,
     lat: row.lat != null ? parseFloat(row.lat) : null,
     lng: row.lng != null ? parseFloat(row.lng) : null,

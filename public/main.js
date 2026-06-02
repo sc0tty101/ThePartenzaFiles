@@ -284,6 +284,7 @@
   }
 
   function starsHtml(rating) {
+    if (rating == null) return '<span class="unrated-label">Unrated</span>';
     let html = '';
     for (let i = 1; i <= 5; i++) {
       html += i <= rating ? '<span>&#9733;</span>' : '<span class="empty-star">&#9733;</span>';

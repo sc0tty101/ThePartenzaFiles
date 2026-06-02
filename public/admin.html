@@ -201,15 +201,16 @@
               <option value="book">Book</option>
             </select>
           </label>
-          <label>Rating *
+          <label>Rating
             <div class="star-input" id="star-input" role="group" aria-label="Rating">
               <button type="button" class="star" data-value="1">&#9733;</button>
               <button type="button" class="star" data-value="2">&#9733;</button>
               <button type="button" class="star" data-value="3">&#9733;</button>
               <button type="button" class="star" data-value="4">&#9733;</button>
               <button type="button" class="star" data-value="5">&#9733;</button>
+              <span id="star-unrated-label" class="star-unrated-label">Not yet watched</span>
             </div>
-            <input type="hidden" id="entry-rating" value="3">
+            <input type="hidden" id="entry-rating" value="">
           </label>
         </div>
         <label>Incident <span class="label-hint">(optional)</span>

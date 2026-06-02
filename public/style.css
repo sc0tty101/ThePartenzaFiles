@@ -1316,6 +1316,22 @@ button, .btn-primary, .btn-ghost, .btn-danger {
 .entry-type-chip--podcast  { background: rgba(130,64,201,0.15); color: #8240c9; }
 .entry-type-chip--book     { background: rgba(64,180,100,0.15); color: #40b464; }
 
+/* ── Unrated state ── */
+.star-unrated-label {
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+.unrated-label {
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
 /* ── Responsive ── */
 @media (max-width: 600px) {
   .header-inner { flex-direction: column; align-items: flex-start; }
