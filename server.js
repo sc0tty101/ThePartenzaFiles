@@ -78,205 +78,6 @@ async function initDb() {
     ALTER TABLE entries ALTER COLUMN rating DROP DEFAULT;
     ALTER TABLE entries ALTER COLUMN rating DROP NOT NULL;
   `);
-
-  await seedData();
-}
-
-async function seedData() {
-  const { rows } = await pool.query('SELECT COUNT(*) FROM entries');
-  if (parseInt(rows[0].count) > 0) return;
-
-  const incidents = [
-    {
-      title: 'Space Shuttle Challenger Disaster',
-      description: "On January 28, 1986, the Space Shuttle Challenger broke apart 73 seconds into its flight, killing all seven crew members. The disaster was caused by the failure of O-ring seals in a solid rocket booster, exacerbated by unusually cold temperatures at launch. Subsequent investigation revealed deep institutional failures at NASA, including suppression of engineers' safety concerns.",
-      date: 'January 28, 1986',
-      location_name: 'Kennedy Space Center, Florida, USA',
-      lat: 28.5729, lng: -80.6490,
-      tags: ['space', 'nasa', 'challenger', 'engineering'],
-      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Challenger_explosion.jpg/1280px-Challenger_explosion.jpg'
-    },
-    {
-      title: 'Überlingen Mid-Air Collision',
-      description: "On July 1, 2002, a Bashkirian Airlines Tupolev Tu-154 and a DHL Boeing 757 collided over Überlingen, Germany, killing all 71 people aboard both aircraft. The collision occurred because conflicting instructions were given by an automated collision-avoidance system and a human air traffic controller. The tragedy had a devastating postscript: the controller was murdered by a bereaved father two years later.",
-      date: 'July 1, 2002',
-      location_name: 'Überlingen, Germany',
-      lat: 47.7606, lng: 9.1611,
-      tags: ['aviation', 'atc', 'collision', 'europe'],
-      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Tupolev_Tu-154_Bashkirian_Airlines.jpg/1280px-Tupolev_Tu-154_Bashkirian_Airlines.jpg'
-    },
-    {
-      title: 'Three Mile Island Accident',
-      description: "On March 28, 1979, the Three Mile Island Unit 2 nuclear power plant in Pennsylvania suffered a partial meltdown — the most serious nuclear accident in U.S. history. A combination of equipment failures, design problems, and operator errors led to a loss of coolant and significant fuel damage. The accident transformed public perception of nuclear power and prompted major changes in regulation and emergency response planning.",
-      date: 'March 28, 1979',
-      location_name: 'Three Mile Island, Pennsylvania, USA',
-      lat: 40.1533, lng: -76.7252,
-      tags: ['systems', 'theory', 'nuclear', 'engineering'],
-      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Three_Mile_Island_2_-_just_before_the_cooling_towers_were_demolished.jpg/1280px-Three_Mile_Island_2_-_just_before_the_cooling_towers_were_demolished.jpg'
-    },
-    {
-      title: 'Demolition of Pruitt-Igoe',
-      description: "The Pruitt-Igoe housing project in St. Louis, Missouri, was demolished between 1972 and 1976 after years of social and structural decline. Built in 1954 as a modernist utopian experiment in public housing, it became a symbol — often unfairly — of the failure of large-scale urban planning. The real story involves deliberate underfunding, racial segregation, and political abandonment rather than architectural failure.",
-      date: '1972–1976',
-      location_name: 'St. Louis, Missouri, USA',
-      lat: 38.6270, lng: -90.1994,
-      tags: ['architecture', 'housing', 'urban', 'collapse'],
-      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Pruitt-igoe_collapse-series.jpg/1280px-Pruitt-igoe_collapse-series.jpg'
-    },
-    {
-      title: 'Fukushima Daiichi Nuclear Disaster',
-      description: "On March 11, 2011, a magnitude 9.0 earthquake and subsequent tsunami triggered a nuclear disaster at the Fukushima Daiichi power plant in Japan, causing three reactor meltdowns. It was the most severe nuclear accident since Chernobyl. Japan's National Diet investigation concluded the disaster was 'profoundly manmade,' citing regulatory capture, cultural deference to authority, and inadequate emergency preparation.",
-      date: 'March 11, 2011',
-      location_name: 'Fukushima Daiichi, Japan',
-      lat: 37.4215, lng: 141.0329,
-      tags: ['nuclear', 'japan', 'fukushima', 'tsunami'],
-      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Fukushima_I_by_Digital_Globe.jpg/1280px-Fukushima_I_by_Digital_Globe.jpg'
-    },
-    {
-      title: 'BP Texas City Refinery Explosion',
-      description: "On March 23, 2005, an explosion at BP's Texas City refinery killed 15 workers and injured 180 others. The blast originated in a raffinate splitter tower that had been overfilled during a restart, and was the deadliest U.S. industrial accident in over a decade. Investigations found a pattern of safety culture failures, budget cuts, and normalised deviations that created the conditions for disaster.",
-      date: 'March 23, 2005',
-      location_name: 'Texas City, Texas, USA',
-      lat: 29.3838, lng: -94.9027,
-      tags: ['industrial', 'explosion', 'bp', 'texas'],
-      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Texas_City_Refinery_explosion.jpg/1280px-Texas_City_Refinery_explosion.jpg'
-    },
-    {
-      title: 'Flint Water Crisis',
-      description: "Between 2014 and 2019, residents of Flint, Michigan, were exposed to dangerously high levels of lead in their drinking water after the city switched its water supply source to the Flint River without implementing adequate corrosion controls. The crisis exposed deep failures in public health infrastructure, environmental regulation, and the treatment of low-income communities of colour by government at all levels.",
-      date: '2014–2019',
-      location_name: 'Flint, Michigan, USA',
-      lat: 43.0125, lng: -83.6875,
-      tags: ['water', 'flint', 'infrastructure', 'public-health'],
-      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Flint_Water_Crisis_2016.jpg/1280px-Flint_Water_Crisis_2016.jpg'
-    },
-    {
-      title: 'Ramstein Airshow Disaster',
-      description: "On August 28, 1988, three jets of the Italian Air Force aerobatic team Frecce Tricolori collided during a display at Ramstein Air Base in West Germany. The collision sent a fireball into the crowd, killing 70 spectators and injuring nearly 350 more. Despite being one of the deadliest airshow accidents in history, it prompted surprisingly little change in international airshow safety regulations.",
-      date: 'August 28, 1988',
-      location_name: 'Ramstein Air Base, Germany',
-      lat: 49.4369, lng: 7.6003,
-      tags: ['aviation', 'airshow', 'germany', 'military'],
-      image_url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Ramstein_airshow_disaster.jpg/1280px-Ramstein_airshow_disaster.jpg'
-    }
-  ];
-
-  const entries = [
-    {
-      title: "The Challenger Disaster — Richard Feynman's Investigation",
-      url: 'https://www.youtube.com/watch?v=6Rwcbsn19c0',
-      type: 'video',
-      tags: ['space', 'nasa', 'challenger', 'engineering'],
-      review: "Feynman's famous O-ring demonstration before the Rogers Commission is one of the most quietly devastating moments in the history of public accountability. A physicist drops a rubber ring in ice water and unravels years of institutional cover. Essential.",
-      rating: 5,
-      location_name: 'Kennedy Space Center, Florida, USA',
-      lat: 28.5729, lng: -80.6490,
-      incidentSlug: 'space-shuttle-challenger-disaster'
-    },
-    {
-      title: 'Mayday: Air Crash Investigation — Überlingen Mid-Air Collision',
-      url: 'https://www.youtube.com/watch?v=oHyWFP0SYIE',
-      type: 'video',
-      tags: ['aviation', 'atc', 'collision', 'europe'],
-      review: 'Two aircraft collide over Germany in 2002 because of conflicting instructions from an automated system and a controller. The episode covers the crash but also the devastating aftermath — including the murder of the controller by a grieving father. Hard to watch, impossible to look away.',
-      rating: 4,
-      location_name: 'Überlingen, Germany',
-      lat: 47.7606, lng: 9.1611,
-      incidentSlug: 'uberlingen-mid-air-collision'
-    },
-    {
-      title: 'Normal Accidents: Living with High-Risk Technologies — Charles Perrow',
-      url: 'https://www.amazon.com/Normal-Accidents-Living-High-Risk-Technologies/dp/0691004129',
-      type: 'book',
-      tags: ['systems', 'theory', 'nuclear', 'engineering'],
-      review: "Perrow's argument is simple and unsettling: in tightly coupled, complex systems, catastrophic accidents aren't failures — they're normal. Written after Three Mile Island, it holds up uncomfortably well. Dense but worth it if you want to understand why disasters keep happening despite our best efforts.",
-      rating: 5,
-      location_name: 'Three Mile Island, Pennsylvania, USA',
-      lat: 40.1533, lng: -76.7252,
-      incidentSlug: 'three-mile-island-accident'
-    },
-    {
-      title: '99% Invisible — The Pruitt-Igoe Myth',
-      url: 'https://99percentinvisible.org/episode/the-pruitt-igoe-myth/',
-      type: 'podcast',
-      tags: ['architecture', 'housing', 'urban', 'collapse'],
-      review: "The demolition of the Pruitt-Igoe housing project in St. Louis became shorthand for the failure of modernist architecture. This episode complicates that story considerably — the buildings weren't the problem. A good listen for anyone interested in how we assign blame after things fail.",
-      rating: 4,
-      location_name: 'St. Louis, Missouri, USA',
-      lat: 38.6270, lng: -90.1994,
-      incidentSlug: 'demolition-of-pruitt-igoe'
-    },
-    {
-      title: 'The Fukushima Daiichi Nuclear Disaster — Official NAIIC Report Summary',
-      url: 'https://www.nirs.org/wp-content/uploads/fukushima/naiic_report.pdf',
-      type: 'article',
-      tags: ['nuclear', 'japan', 'fukushima', 'tsunami'],
-      review: "The National Diet's official investigation concluded the disaster was \"profoundly manmade.\" The executive summary alone is worth reading — unusually frank for a government document, it names the cultural and regulatory failures directly. The first 20 pages tell you everything.",
-      rating: 5,
-      location_name: 'Fukushima Daiichi, Japan',
-      lat: 37.4215, lng: 141.0329,
-      incidentSlug: 'fukushima-daiichi-nuclear-disaster'
-    },
-    {
-      title: 'Seconds from Disaster — Texas City Refinery Explosion',
-      url: 'https://www.youtube.com/watch?v=XuPLkrJeN8I',
-      type: 'video',
-      tags: ['industrial', 'explosion', 'bp', 'texas'],
-      review: 'The 2005 BP Texas City disaster killed 15 people and injured 180. This reconstruction shows how a series of normalised deviations — each individually survivable — combined into catastrophe. Good on the human factors side, though it underplays the corporate cost-cutting context.',
-      rating: 3,
-      location_name: 'Texas City, Texas, USA',
-      lat: 29.3838, lng: -94.9027,
-      incidentSlug: 'bp-texas-city-refinery-explosion'
-    },
-    {
-      title: "How Flint's Water Crisis Happened — FiveThirtyEight",
-      url: 'https://fivethirtyeight.com/features/how-flints-water-crisis-happened/',
-      type: 'article',
-      tags: ['water', 'flint', 'infrastructure', 'public-health'],
-      review: "Data-driven reconstruction of how Flint's water supply became contaminated with lead. Clear on the sequence of decisions and the bureaucratic gaps that allowed it to continue. Good as a primer before going deeper into longer-form coverage.",
-      rating: 3,
-      location_name: 'Flint, Michigan, USA',
-      lat: 43.0125, lng: -83.6875,
-      incidentSlug: 'flint-water-crisis'
-    },
-    {
-      title: 'The Ramstein Airshow Disaster — Der Spiegel',
-      url: 'https://www.spiegel.de/international/germany/revisiting-ramstein-a-look-back-at-the-1988-air-show-disaster-a-573165.html',
-      type: 'article',
-      tags: ['aviation', 'airshow', 'germany', 'military'],
-      review: 'The 1988 Ramstein airshow crash killed 70 people when an aerobatic display went wrong over a packed crowd. Largely forgotten outside Germany. This piece revisits it with survivor testimony and asks why so little changed about airshow safety in the aftermath.',
-      rating: 4,
-      location_name: 'Ramstein Air Base, Germany',
-      lat: 49.4369, lng: 7.6003,
-      incidentSlug: 'ramstein-airshow-disaster'
-    }
-  ];
-
-  const incidentIdBySlug = {};
-
-  for (const incident of incidents) {
-    const slug = slugify(incident.title);
-    const id = uuidv4();
-    incidentIdBySlug[slug] = id;
-    await pool.query(
-      `INSERT INTO incidents (id, slug, title, description, date, location_name, lat, lng, tags, image_url)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-      [id, slug, incident.title, incident.description, incident.date,
-       incident.location_name || null, incident.lat || null, incident.lng || null,
-       incident.tags, incident.image_url || null]
-    );
-  }
-
-  for (const entry of entries) {
-    const incidentId = incidentIdBySlug[entry.incidentSlug] || null;
-    await pool.query(
-      `INSERT INTO entries (id, title, url, type, tags, review, rating, location_name, lat, lng, incident_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-      [uuidv4(), entry.title, entry.url, entry.type, entry.tags, entry.review, entry.rating,
-       entry.location_name || null, entry.lat || null, entry.lng || null, incidentId]
-    );
-  }
-  console.log(`Seeded ${incidents.length} incidents and ${entries.length} entries.`);
 }
 
 app.use(express.json());
@@ -496,7 +297,7 @@ app.post('/api/import', requireAuth, express.json({ limit: '10mb' }), async (req
     if (!incident.title || !incident.slug) { skipped++; continue; }
     const id = incident.id || uuidv4();
     const tags = Array.isArray(incident.tags) ? incident.tags : parseTags(incident.tags);
-    await pool.query(
+    const result = await pool.query(
       `INSERT INTO incidents (id, slug, title, description, date, location_name, lat, lng, tags, is_fictional, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        ON CONFLICT (id) DO NOTHING`,
@@ -506,14 +307,14 @@ app.post('/api/import', requireAuth, express.json({ limit: '10mb' }), async (req
        incident.lng ? parseFloat(incident.lng) : null,
        tags, incident.is_fictional === true, incident.createdAt || new Date(), incident.updatedAt || new Date()]
     );
-    inserted++;
+    if (result.rowCount > 0) inserted++; else skipped++;
   }
 
   for (const entry of entriesArray) {
     if (!entry.title || !entry.url || !entry.type) { skipped++; continue; }
     const id = entry.id || uuidv4();
     const tags = Array.isArray(entry.tags) ? entry.tags : parseTags(entry.tags);
-    await pool.query(
+    const result = await pool.query(
       `INSERT INTO entries (id, title, url, type, tags, review, rating, location_name, lat, lng, incident_id, created_at, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        ON CONFLICT (id) DO NOTHING`,
@@ -525,7 +326,7 @@ app.post('/api/import', requireAuth, express.json({ limit: '10mb' }), async (req
        entry.incident_id || null,
        entry.createdAt || new Date(), entry.updatedAt || new Date()]
     );
-    inserted++;
+    if (result.rowCount > 0) inserted++; else skipped++;
   }
 
   res.json({ ok: true, inserted, skipped });

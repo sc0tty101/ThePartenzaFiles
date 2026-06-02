@@ -216,7 +216,7 @@
             <div class="admin-entry-title">${escHtml(e.title)}</div>
             <div class="admin-entry-meta">
               <span class="entry-type-chip entry-type-chip--${e.type}">${e.type}</span>
-              ${e.rating != null ? `<span style="color:var(--gold)">${'★'.repeat(e.rating)}</span><span style="color:var(--text-dim)">${'★'.repeat(5 - e.rating)}</span>` : '<span style="color:var(--text-dim);font-style:italic">Unrated</span>'}
+              ${e.rating != null ? `<span style="color:var(--gold)">${'★'.repeat(e.rating)}</span><span style="color:#46586b">${'★'.repeat(5 - e.rating)}</span>` : '<span class="unrated-label">Unrated</span>'}
               ${(e.tags || []).length ? `&middot; ${escHtml((e.tags || []).join(', '))}` : ''}
             </div>
           </div>
