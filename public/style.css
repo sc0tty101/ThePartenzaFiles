@@ -1316,6 +1316,31 @@ button, .btn-primary, .btn-ghost, .btn-danger {
 .entry-type-chip--podcast  { background: rgba(130,64,201,0.15); color: #8240c9; }
 .entry-type-chip--book     { background: rgba(64,180,100,0.15); color: #40b464; }
 
+/* ── Modal tag cloud ── */
+.modal-tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+.modal-tag-pill {
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  padding: 0.2rem 0.55rem;
+  background: var(--tag-bg);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.modal-tag-pill:hover { border-color: var(--border2); color: var(--text-muted); }
+.modal-tag-pill.active {
+  background: var(--gold-dim);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
 /* ── Unrated state ── */
 .star-unrated-label {
   font-family: var(--font-ui);
