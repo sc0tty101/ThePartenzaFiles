@@ -150,7 +150,7 @@
             <div class="admin-entry-title">${escHtml(e.title)}</div>
             <div class="admin-entry-meta">
               <span class="entry-type-chip entry-type-chip--${e.type}">${e.type}</span>
-              ${'★'.repeat(e.rating || 0)}<span style="color:var(--text-dim)">${'★'.repeat(5 - (e.rating || 0))}</span>
+              ${e.rating != null ? `${'★'.repeat(e.rating)}<span style="color:var(--text-dim)">${'★'.repeat(5 - e.rating)}</span>` : '<span style="color:var(--text-dim);font-style:italic">Unrated</span>'}
               ${(e.tags || []).length ? `&middot; ${escHtml((e.tags || []).join(', '))}` : ''}
             </div>
           </div>
@@ -333,9 +333,11 @@
 
   function setStars(rating) {
     currentRating = rating;
-    document.getElementById('entry-rating').value = rating;
+    document.getElementById('entry-rating').value = rating != null ? rating : '';
+    const unratedLabel = document.getElementById('star-unrated-label');
+    if (unratedLabel) unratedLabel.style.display = rating == null ? 'inline' : 'none';
     document.querySelectorAll('.star').forEach(s => {
-      s.classList.toggle('filled', parseInt(s.dataset.value) <= rating);
+      s.classList.toggle('filled', rating != null && parseInt(s.dataset.value) <= rating);
     });
   }
 
@@ -344,7 +346,7 @@
     document.getElementById('modal-title').textContent = 'New entry';
     document.getElementById('entry-id').value = '';
     document.getElementById('entry-form').reset();
-    setStars(3);
+    setStars(null);
     document.getElementById('entry-incident').value = incidentId || '';
     document.getElementById('entry-error').textContent = '';
     document.getElementById('entry-modal').style.display = 'flex';
@@ -363,7 +365,7 @@
     document.getElementById('entry-tags').value = (entry.tags || []).join(', ');
     document.getElementById('entry-review').value = entry.review || '';
     document.getElementById('entry-incident').value = entry.incident_id || '';
-    setStars(entry.rating || 3);
+    setStars(entry.rating != null ? entry.rating : null);
     document.getElementById('entry-error').textContent = '';
     document.getElementById('entry-modal').style.display = 'flex';
     document.getElementById('entry-title').focus();
@@ -516,12 +518,17 @@
     document.getElementById('delete-confirm').addEventListener('click', deleteItem);
 
     document.querySelectorAll('.star').forEach(star => {
-      star.addEventListener('click', () => setStars(parseInt(star.dataset.value)));
+      star.addEventListener('click', () => {
+        const val = parseInt(star.dataset.value);
+        setStars(currentRating === val ? null : val);
+      });
       star.addEventListener('mouseenter', () => {
         const val = parseInt(star.dataset.value);
         document.querySelectorAll('.star').forEach(s => {
           s.classList.toggle('filled', parseInt(s.dataset.value) <= val);
         });
+        const unratedLabel = document.getElementById('star-unrated-label');
+        if (unratedLabel) unratedLabel.style.display = 'none';
       });
     });
     document.getElementById('star-input').addEventListener('mouseleave', () => {
