@@ -100,6 +100,9 @@
     allIncidents.forEach(i => {
       (i.tags || []).forEach(t => { tagCounts[t] = (tagCounts[t] || 0) + 1; });
     });
+    allEntries.filter(e => !e.incident_id).forEach(e => {
+      (e.tags || []).forEach(t => { tagCounts[t] = (tagCounts[t] || 0) + 1; });
+    });
     const sorted = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
     const cloud = document.getElementById('tag-cloud');
     cloud.innerHTML = '';
@@ -162,6 +165,7 @@
   function standaloneEntries() {
     let list = allEntries.filter(e => !e.incident_id);
     if (activeType !== 'all') list = list.filter(e => e.type === activeType);
+    if (activeTag) list = list.filter(e => (e.tags || []).includes(activeTag));
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       list = list.filter(e =>
