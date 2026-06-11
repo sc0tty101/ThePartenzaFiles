@@ -8,18 +8,21 @@
   let currentView = 'list';
   let map = null;
   let markers = [];
+  let entryTypes = [];
 
   async function init() {
     const slug = new URLSearchParams(window.location.search).get('incident');
 
-    const [configRes, incidentsRes, entriesRes] = await Promise.all([
+    const [configRes, incidentsRes, entriesRes, typesRes] = await Promise.all([
       fetch('/api/config'),
       fetch('/api/incidents'),
-      fetch('/api/entries')
+      fetch('/api/entries'),
+      fetch('/api/entry-types')
     ]);
     const config = await configRes.json();
     allIncidents = await incidentsRes.json();
     allEntries = await entriesRes.json();
+    entryTypes = await typesRes.json();
 
     document.getElementById('site-title').textContent = config.siteTitle;
     document.getElementById('site-tagline').textContent = config.siteTagline;
@@ -35,9 +38,22 @@
   function showBrowseView() {
     document.getElementById('browse-view').style.display = 'block';
     document.getElementById('detail-view').style.display = 'none';
+    buildFilters();
     buildTagCloud();
     render();
     attachControls();
+  }
+
+  function buildFilters() {
+    const wrap = document.getElementById('filters');
+    wrap.innerHTML = '';
+    ['all', ...entryTypes].forEach(type => {
+      const btn = document.createElement('button');
+      btn.className = 'filter-btn' + (type === activeType ? ' active' : '');
+      btn.dataset.type = type;
+      btn.textContent = type === 'all' ? 'All' : type.charAt(0).toUpperCase() + type.slice(1);
+      wrap.appendChild(btn);
+    });
   }
 
   async function showDetailView(slug) {
@@ -81,7 +97,7 @@
         ${incident.description ? `<p class="incident-detail-desc">${escHtml(incident.description)}</p>` : ''}
         ${(incident.tags || []).length ? `
           <div class="incident-detail-tags">
-            ${incident.tags.map(t => `<span class="entry-tag">${escHtml(t)}</span>`).join('')}
+            ${incident.tags.map(t => `<a class="entry-tag" href="/?tag=${encodeURIComponent(t)}">${escHtml(t)}</a>`).join('')}
           </div>` : ''}
       </div>
 
@@ -213,7 +229,11 @@
       standaloneSection.style.display = 'none';
     }
 
-    grid.querySelectorAll('.incident-card-tag').forEach(btn => {
+    const tagButtons = [
+      ...grid.querySelectorAll('.incident-card-tag'),
+      ...document.querySelectorAll('#standalone-entries .entry-tag')
+    ];
+    tagButtons.forEach(btn => {
       btn.addEventListener('click', ev => {
         ev.preventDefault();
         const tag = btn.dataset.tag;
@@ -280,7 +300,7 @@
             ${showLocation && e.location_name ? `<span class="entry-location">&#9679; ${escHtml(e.location_name)}</span>` : ''}
             ${(e.tags || []).length ? `
               <div class="entry-tags">
-                ${e.tags.map(t => `<button class="entry-tag" data-tag="${escHtml(t)}">${escHtml(t)}</button>`).join('')}
+                ${e.tags.map(t => `<a class="entry-tag" data-tag="${escHtml(t)}" href="/?tag=${encodeURIComponent(t)}">${escHtml(t)}</a>`).join('')}
               </div>` : ''}
           </div>
         </div>
@@ -390,5 +410,9 @@
       .replace(/"/g, '&quot;');
   }
 
-  init();
+  init().catch(err => {
+    console.error('Failed to load:', err);
+    document.querySelector('main').innerHTML =
+      '<div class="empty-state"><p>Failed to load the archive. Please check your connection and refresh the page.</p></div>';
+  });
 })();

@@ -84,6 +84,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+if (!process.env.SESSION_SECRET && process.env.NODE_ENV === 'production') {
+  console.warn('WARNING: SESSION_SECRET is not set. Sessions are using an insecure default secret — set SESSION_SECRET in your environment.');
+}
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'partenza-secret-change-me',
   resave: false,
@@ -108,7 +112,11 @@ function requireAuth(req, res, next) {
   res.status(401).json({ error: 'Unauthorized' });
 }
 
-app.get('/api/incidents', async (req, res) => {
+// Express 4 doesn't catch rejected promises from async handlers; without this,
+// a DB error (e.g. duplicate slug) crashes the process.
+const wrap = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+
+app.get('/api/incidents', wrap(async (req, res) => {
   const result = await pool.query(`
     SELECT i.*,
       COUNT(e.id)::int AS entry_count,
@@ -119,9 +127,9 @@ app.get('/api/incidents', async (req, res) => {
     ORDER BY i.created_at DESC
   `);
   res.json(result.rows.map(normalizeIncident));
-});
+}));
 
-app.get('/api/incidents/by-slug/:slug', async (req, res) => {
+app.get('/api/incidents/by-slug/:slug', wrap(async (req, res) => {
   const incRes = await pool.query('SELECT * FROM incidents WHERE slug=$1', [req.params.slug]);
   if (incRes.rows.length === 0) return res.status(404).json({ error: 'Not found' });
   const incident = normalizeIncident(incRes.rows[0]);
@@ -131,9 +139,9 @@ app.get('/api/incidents/by-slug/:slug', async (req, res) => {
   );
   incident.entries = entriesRes.rows.map(normalizeEntry);
   res.json(incident);
-});
+}));
 
-app.post('/api/incidents', requireAuth, async (req, res) => {
+app.post('/api/incidents', requireAuth, wrap(async (req, res) => {
   const tags = parseTags(req.body.tags);
   const slug = req.body.slug || slugify(req.body.title);
   const result = await pool.query(
@@ -146,9 +154,9 @@ app.post('/api/incidents', requireAuth, async (req, res) => {
      tags, req.body.image_url || null, req.body.is_fictional === true || req.body.is_fictional === 'true']
   );
   res.json(normalizeIncident(result.rows[0]));
-});
+}));
 
-app.put('/api/incidents/:id', requireAuth, async (req, res) => {
+app.put('/api/incidents/:id', requireAuth, wrap(async (req, res) => {
   const tags = parseTags(req.body.tags);
   const slug = req.body.slug || slugify(req.body.title);
   const result = await pool.query(
@@ -165,39 +173,39 @@ app.put('/api/incidents/:id', requireAuth, async (req, res) => {
   );
   if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
   res.json(normalizeIncident(result.rows[0]));
-});
+}));
 
-app.delete('/api/incidents/:id', requireAuth, async (req, res) => {
+app.delete('/api/incidents/:id', requireAuth, wrap(async (req, res) => {
   await pool.query('DELETE FROM incidents WHERE id=$1', [req.params.id]);
   res.json({ ok: true });
-});
+}));
 
-app.get('/api/entries', async (req, res) => {
+app.get('/api/entries', wrap(async (req, res) => {
   const result = await pool.query('SELECT * FROM entries ORDER BY created_at DESC');
   res.json(result.rows.map(normalizeEntry));
-});
+}));
 
-app.get('/api/config', async (req, res) => {
+app.get('/api/config', wrap(async (req, res) => {
   const config = await getConfig();
   res.json({ siteTitle: config.siteTitle, siteTagline: config.siteTagline });
-});
+}));
 
-app.get('/api/entry-types', async (req, res) => {
+app.get('/api/entry-types', wrap(async (req, res) => {
   const config = await getConfig();
   const types = config.entryTypes ? JSON.parse(config.entryTypes) : ['video', 'article', 'podcast', 'book'];
   res.json(types);
-});
+}));
 
-app.put('/api/entry-types', requireAuth, async (req, res) => {
+app.put('/api/entry-types', requireAuth, wrap(async (req, res) => {
   const { types } = req.body;
   if (!Array.isArray(types) || types.some(t => typeof t !== 'string' || !t.trim())) {
     return res.status(400).json({ error: 'types must be a non-empty array of strings' });
   }
   await setConfig('entryTypes', JSON.stringify(types.map(t => t.trim().toLowerCase())));
   res.json({ ok: true });
-});
+}));
 
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', wrap(async (req, res) => {
   const config = await getConfig();
   const match = await bcrypt.compare(req.body.password, config.passwordHash);
   if (match) {
@@ -206,7 +214,7 @@ app.post('/api/login', async (req, res) => {
   } else {
     res.status(401).json({ error: 'Incorrect password' });
   }
-});
+}));
 
 app.post('/api/logout', (req, res) => {
   req.session.destroy();
@@ -217,7 +225,7 @@ app.get('/api/session', (req, res) => {
   res.json({ authenticated: !!req.session.authenticated });
 });
 
-app.post('/api/setup', async (req, res) => {
+app.post('/api/setup', wrap(async (req, res) => {
   const config = await getConfig();
   if (config.passwordHash !== '$2b$10$placeholder') {
     return res.status(400).json({ error: 'Already set up' });
@@ -230,9 +238,9 @@ app.post('/api/setup', async (req, res) => {
   await setConfig('passwordHash', hash);
   req.session.authenticated = true;
   res.json({ ok: true });
-});
+}));
 
-app.post('/api/entries', requireAuth, async (req, res) => {
+app.post('/api/entries', requireAuth, wrap(async (req, res) => {
   const tags = parseTags(req.body.tags);
   const result = await pool.query(
     `INSERT INTO entries (id, title, url, type, tags, review, rating, location_name, lat, lng, incident_id)
@@ -245,9 +253,9 @@ app.post('/api/entries', requireAuth, async (req, res) => {
      req.body.incident_id || null]
   );
   res.json(normalizeEntry(result.rows[0]));
-});
+}));
 
-app.put('/api/entries/:id', requireAuth, async (req, res) => {
+app.put('/api/entries/:id', requireAuth, wrap(async (req, res) => {
   const tags = parseTags(req.body.tags);
   const result = await pool.query(
     `UPDATE entries SET title=$1, url=$2, type=$3, tags=$4, review=$5, rating=$6,
@@ -263,14 +271,14 @@ app.put('/api/entries/:id', requireAuth, async (req, res) => {
   );
   if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
   res.json(normalizeEntry(result.rows[0]));
-});
+}));
 
-app.delete('/api/entries/:id', requireAuth, async (req, res) => {
+app.delete('/api/entries/:id', requireAuth, wrap(async (req, res) => {
   await pool.query('DELETE FROM entries WHERE id=$1', [req.params.id]);
   res.json({ ok: true });
-});
+}));
 
-app.get('/api/export', requireAuth, async (req, res) => {
+app.get('/api/export', requireAuth, wrap(async (req, res) => {
   const incidentsRes = await pool.query('SELECT * FROM incidents ORDER BY created_at ASC');
   const entriesRes = await pool.query('SELECT * FROM entries ORDER BY created_at ASC');
   const data = {
@@ -281,9 +289,9 @@ app.get('/api/export', requireAuth, async (req, res) => {
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.setHeader('Content-Type', 'application/json');
   res.send(JSON.stringify(data, null, 2));
-});
+}));
 
-app.post('/api/import', requireAuth, express.json({ limit: '10mb' }), async (req, res) => {
+app.post('/api/import', requireAuth, express.json({ limit: '10mb' }), wrap(async (req, res) => {
   const body = req.body;
   const entriesArray = Array.isArray(body) ? body : (body.entries || []);
   const incidentsArray = Array.isArray(body) ? [] : (body.incidents || []);
@@ -298,14 +306,15 @@ app.post('/api/import', requireAuth, express.json({ limit: '10mb' }), async (req
     const id = incident.id || uuidv4();
     const tags = Array.isArray(incident.tags) ? incident.tags : parseTags(incident.tags);
     const result = await pool.query(
-      `INSERT INTO incidents (id, slug, title, description, date, location_name, lat, lng, tags, is_fictional, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      `INSERT INTO incidents (id, slug, title, description, date, location_name, lat, lng, tags, image_url, is_fictional, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        ON CONFLICT (id) DO NOTHING`,
       [id, incident.slug, incident.title, incident.description || null, incident.date || null,
        incident.location_name || null,
        incident.lat ? parseFloat(incident.lat) : null,
        incident.lng ? parseFloat(incident.lng) : null,
-       tags, incident.is_fictional === true, incident.createdAt || new Date(), incident.updatedAt || new Date()]
+       tags, incident.image_url || null, incident.is_fictional === true,
+       incident.createdAt || new Date(), incident.updatedAt || new Date()]
     );
     if (result.rowCount > 0) inserted++; else skipped++;
   }
@@ -330,21 +339,95 @@ app.post('/api/import', requireAuth, express.json({ limit: '10mb' }), async (req
   }
 
   res.json({ ok: true, inserted, skipped });
-});
+}));
 
-app.put('/api/config', requireAuth, async (req, res) => {
+app.put('/api/config', requireAuth, wrap(async (req, res) => {
   if (req.body.siteTitle) await setConfig('siteTitle', req.body.siteTitle);
   if (req.body.siteTagline) await setConfig('siteTagline', req.body.siteTagline);
   res.json({ ok: true });
-});
+}));
 
-app.post('/api/change-password', requireAuth, async (req, res) => {
+app.post('/api/change-password', requireAuth, wrap(async (req, res) => {
   const { newPassword } = req.body;
   if (!newPassword || newPassword.length < 8) {
     return res.status(400).json({ error: 'Password must be at least 8 characters' });
   }
   await setConfig('passwordHash', await bcrypt.hash(newPassword, 10));
   res.json({ ok: true });
+}));
+
+app.get('/api/url-metadata', requireAuth, wrap(async (req, res) => {
+  let target;
+  try {
+    target = new URL(req.query.url);
+  } catch {
+    return res.status(400).json({ error: 'Invalid URL' });
+  }
+  if (target.protocol !== 'http:' && target.protocol !== 'https:') {
+    return res.status(400).json({ error: 'Only http(s) URLs are supported' });
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  let html;
+  try {
+    const response = await fetch(target.href, {
+      signal: controller.signal,
+      redirect: 'follow',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; PartenzaFiles/1.0)',
+        'Accept': 'text/html'
+      }
+    });
+    if (!response.ok) {
+      return res.status(422).json({ error: `That page returned an error (${response.status})` });
+    }
+    html = (await response.text()).slice(0, 500000);
+  } catch {
+    return res.status(422).json({ error: 'Could not reach that URL' });
+  } finally {
+    clearTimeout(timer);
+  }
+
+  res.json({
+    title: extractMetaContent(html, ['og:title', 'twitter:title']) || extractTitleTag(html),
+    image: extractMetaContent(html, ['og:image', 'twitter:image'])
+  });
+}));
+
+function extractMetaContent(html, names) {
+  for (const name of names) {
+    const tag = html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${name}["'][^>]*>`, 'i'));
+    if (tag) {
+      const content = tag[0].match(/content=["']([^"']*)["']/i);
+      if (content && content[1].trim()) return decodeEntities(content[1].trim());
+    }
+  }
+  return null;
+}
+
+function extractTitleTag(html) {
+  const match = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+  return match && match[1].trim() ? decodeEntities(match[1].trim()) : null;
+}
+
+function decodeEntities(str) {
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;/g, "'")
+    .replace(/&#x27;/gi, "'")
+    .replace(/&nbsp;/g, ' ');
+}
+
+app.use((err, req, res, next) => {
+  if (err.code === '23505') {
+    return res.status(409).json({ error: 'That slug is already in use — choose a different one.' });
+  }
+  console.error(err);
+  res.status(500).json({ error: 'Server error' });
 });
 
 function parseTags(raw) {

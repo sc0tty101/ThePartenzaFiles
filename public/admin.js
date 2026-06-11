@@ -307,6 +307,7 @@
     document.getElementById('incident-slug').dataset.manuallyEdited = '';
     clearIncidentLocation();
     setImagePreview('');
+    document.getElementById('incident-image-status').textContent = '';
     document.getElementById('incident-error').textContent = '';
     document.getElementById('incident-modal').style.display = 'flex';
     document.getElementById('incident-title').focus();
@@ -344,6 +345,7 @@
     const imgUrl = incident.image_url || '';
     document.getElementById('incident-image-url').value = imgUrl;
     setImagePreview(imgUrl);
+    document.getElementById('incident-image-status').textContent = '';
     document.getElementById('incident-is-fictional').checked = !!incident.is_fictional;
     document.getElementById('incident-error').textContent = '';
     document.getElementById('incident-modal').style.display = 'flex';
@@ -454,6 +456,7 @@
     setStars(null);
     document.getElementById('entry-incident').value = incidentId || '';
     document.getElementById('entry-error').textContent = '';
+    document.getElementById('entry-autofill-status').textContent = '';
     buildEntryTagCloud();
     syncTagCloudToInput();
     document.getElementById('entry-modal').style.display = 'flex';
@@ -474,6 +477,7 @@
     document.getElementById('entry-incident').value = entry.incident_id || '';
     setStars(entry.rating != null ? entry.rating : null);
     document.getElementById('entry-error').textContent = '';
+    document.getElementById('entry-autofill-status').textContent = '';
     buildEntryTagCloud();
     syncTagCloudToInput();
     document.getElementById('entry-modal').style.display = 'flex';
@@ -506,6 +510,13 @@
     document.getElementById('delete-modal').style.display = 'none';
     deletingId = null;
     deletingType = null;
+  }
+
+  async function fetchUrlMetadata(url) {
+    const res = await fetch(`/api/url-metadata?url=${encodeURIComponent(url)}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not fetch metadata');
+    return data;
   }
 
   async function saveIncident(data) {
@@ -590,6 +601,55 @@
 
     document.getElementById('incident-image-url').addEventListener('input', e => {
       setImagePreview(e.target.value.trim());
+    });
+
+    document.getElementById('entry-autofill-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('entry-autofill-btn');
+      const status = document.getElementById('entry-autofill-status');
+      const url = document.getElementById('entry-url').value.trim();
+      if (!url) { status.textContent = 'Enter a URL first.'; return; }
+      btn.disabled = true;
+      status.textContent = 'Fetching…';
+      try {
+        const { title } = await fetchUrlMetadata(url);
+        const titleField = document.getElementById('entry-title');
+        if (!title) {
+          status.textContent = 'No title found on that page.';
+        } else if (titleField.value.trim()) {
+          status.textContent = `Found “${title}” — clear the title field to use it.`;
+        } else {
+          titleField.value = title;
+          status.textContent = 'Title filled from page.';
+        }
+      } catch (err) {
+        status.textContent = err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById('incident-image-fetch-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('incident-image-fetch-btn');
+      const status = document.getElementById('incident-image-status');
+      const field = document.getElementById('incident-image-url');
+      const url = field.value.trim();
+      if (!url) { status.textContent = 'Paste a page URL first.'; return; }
+      btn.disabled = true;
+      status.textContent = 'Looking for an image…';
+      try {
+        const { image } = await fetchUrlMetadata(url);
+        if (image) {
+          field.value = image;
+          setImagePreview(image);
+          status.textContent = 'Image found on that page.';
+        } else {
+          status.textContent = 'No preview image found on that page.';
+        }
+      } catch (err) {
+        status.textContent = err.message;
+      } finally {
+        btn.disabled = false;
+      }
     });
 
     document.getElementById('incident-form').addEventListener('submit', async e => {
@@ -769,5 +829,10 @@
       .replace(/"/g, '&quot;');
   }
 
-  init();
+  init().catch(err => {
+    console.error('Failed to load:', err);
+    document.body.innerHTML =
+      '<div class="auth-screen"><div class="auth-box"><h2>Failed to load</h2>' +
+      '<p class="auth-sub">Could not reach the server. Please refresh the page.</p></div></div>';
+  });
 })();
