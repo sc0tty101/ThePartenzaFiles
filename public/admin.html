@@ -173,8 +173,12 @@
           <input type="checkbox" id="incident-is-fictional">
           Fictional event <span class="label-hint">(e.g. based on a film, book, or hypothetical scenario)</span>
         </label>
-        <label>Image URL <span class="label-hint">(optional — used as banner and card thumbnail)</span>
-          <input type="url" id="incident-image-url" placeholder="https://...">
+        <label>Image URL <span class="label-hint">(optional — used as banner and card thumbnail; paste a page URL and use “Find image” to grab its preview image)</span>
+          <div class="input-with-btn">
+            <input type="url" id="incident-image-url" placeholder="https://...">
+            <button type="button" id="incident-image-fetch-btn" class="btn-ghost btn-sm">Find image</button>
+          </div>
+          <span id="incident-image-status" class="label-hint"></span>
           <div id="incident-image-preview" class="image-preview" style="display:none">
             <img id="incident-image-preview-img" src="" alt="Preview">
           </div>
@@ -202,7 +206,11 @@
           <input type="text" id="entry-title" required placeholder="e.g. The Challenger Disaster — Full Investigation">
         </label>
         <label>URL *
-          <input type="url" id="entry-url" required placeholder="https://...">
+          <div class="input-with-btn">
+            <input type="url" id="entry-url" required placeholder="https://...">
+            <button type="button" id="entry-autofill-btn" class="btn-ghost btn-sm">Auto-fill title</button>
+          </div>
+          <span id="entry-autofill-status" class="label-hint"></span>
         </label>
         <div class="form-row">
           <label>Type *
