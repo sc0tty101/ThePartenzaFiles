@@ -165,6 +165,12 @@
             <span id="incident-location-selected-name"></span>
             <button type="button" id="incident-location-clear-btn" class="location-clear">&times;</button>
           </div>
+          <p class="label-hint" style="margin-top:0.5rem">or enter coordinates directly</p>
+          <div class="input-with-btn">
+            <input type="text" id="incident-coords" placeholder="e.g. 68°44′21″S 52°19′47″W" autocomplete="off">
+            <button type="button" id="incident-coords-btn" class="btn-ghost btn-sm">Use coordinates</button>
+          </div>
+          <p id="incident-coords-error" class="form-error"></p>
           <input type="hidden" id="incident-location-name">
           <input type="hidden" id="incident-lat">
           <input type="hidden" id="incident-lng">
