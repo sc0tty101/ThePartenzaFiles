@@ -373,6 +373,43 @@
     document.getElementById('incident-location-search').value = '';
     document.getElementById('incident-location-results').style.display = 'none';
     document.getElementById('incident-location-selected').style.display = 'none';
+    document.getElementById('incident-coords').value = '';
+    document.getElementById('incident-coords-error').textContent = '';
+  }
+
+  function useIncidentCoords() {
+    const raw = document.getElementById('incident-coords').value.trim();
+    const errorEl = document.getElementById('incident-coords-error');
+    if (!raw) { errorEl.textContent = 'Enter coordinates first.'; return; }
+    const parsed = parseDmsLatLng(raw);
+    if (!parsed) {
+      errorEl.textContent = 'Could not parse those coordinates. Use a format like 68°44′21″S 52°19′47″W.';
+      return;
+    }
+    errorEl.textContent = '';
+    setIncidentLocation(parsed.display, parsed.lat, parsed.lng);
+    document.getElementById('incident-coords').value = '';
+  }
+
+  // Parses one or two DMS coordinate tokens out of free text, e.g.
+  // "68°44′21″S 52°19′47″W" (curly ′ ″ or straight ' " both accepted).
+  function parseDmsLatLng(input) {
+    const re = /(\d+(?:\.\d+)?)\s*°\s*(?:(\d+(?:\.\d+)?)\s*[′']\s*)?(?:(\d+(?:\.\d+)?)\s*[″"]\s*)?\s*([NSEW])/gi;
+    let match;
+    let lat = null, lng = null, latStr = null, lngStr = null;
+    while ((match = re.exec(input)) !== null) {
+      const deg = parseFloat(match[1]);
+      const min = match[2] ? parseFloat(match[2]) : 0;
+      const sec = match[3] ? parseFloat(match[3]) : 0;
+      const hemi = match[4].toUpperCase();
+      let value = deg + min / 60 + sec / 3600;
+      if (hemi === 'S' || hemi === 'W') value = -value;
+      if (hemi === 'N' || hemi === 'S') { lat = value; latStr = match[0].trim(); }
+      else { lng = value; lngStr = match[0].trim(); }
+    }
+    if (lat == null || lng == null) return null;
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+    return { lat, lng, display: `${latStr} ${lngStr}` };
   }
 
   async function geocodeSearch(searchInputId, resultsId, setLocationFn) {
@@ -424,6 +461,17 @@
     });
   }
 
+  // Tags already used on this incident (its own tags plus any of its existing
+  // entries' tags), so a new entry can start pre-filled instead of retyping them.
+  function getIncidentEntryTags(incidentId) {
+    if (!incidentId) return [];
+    const tagSet = new Set();
+    const incident = incidents.find(i => i.id === incidentId);
+    if (incident) (incident.tags || []).forEach(t => tagSet.add(t));
+    entries.filter(e => e.incident_id === incidentId).forEach(e => (e.tags || []).forEach(t => tagSet.add(t)));
+    return [...tagSet].sort();
+  }
+
   function syncTagCloudToInput() {
     const current = getEntryTags();
     document.querySelectorAll('#entry-tag-cloud .modal-tag-pill').forEach(btn => {
@@ -455,6 +503,7 @@
     document.getElementById('entry-form').reset();
     setStars(null);
     document.getElementById('entry-incident').value = incidentId || '';
+    document.getElementById('entry-tags').value = getIncidentEntryTags(incidentId).join(', ');
     document.getElementById('entry-error').textContent = '';
     document.getElementById('entry-autofill-status').textContent = '';
     buildEntryTagCloud();
@@ -599,6 +648,11 @@
     });
     document.getElementById('incident-location-clear-btn').addEventListener('click', clearIncidentLocation);
 
+    document.getElementById('incident-coords-btn').addEventListener('click', () => useIncidentCoords());
+    document.getElementById('incident-coords').addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); useIncidentCoords(); }
+    });
+
     document.getElementById('incident-image-url').addEventListener('input', e => {
       setImagePreview(e.target.value.trim());
     });
@@ -676,6 +730,14 @@
 
     document.getElementById('new-entry-btn').addEventListener('click', () => openNewEntryModal(null));
     document.getElementById('entry-tags').addEventListener('input', syncTagCloudToInput);
+    document.getElementById('entry-incident').addEventListener('change', e => {
+      if (editingEntryId) return; // don't rewrite tags when reassigning an existing entry
+      const suggested = getIncidentEntryTags(e.target.value || null);
+      if (suggested.length === 0) return;
+      const merged = [...new Set([...getEntryTags(), ...suggested])];
+      document.getElementById('entry-tags').value = merged.join(', ');
+      syncTagCloudToInput();
+    });
     document.getElementById('entries-search').addEventListener('input', e => {
       renderAdminEntryList(e.target.value);
     });
