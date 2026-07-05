@@ -1,11 +1,13 @@
 (() => {
   let allIncidents = [];
   let allEntries = [];
+  let incidentsById = {};
   let activeType = 'all';
   let activeTag = null;
   let searchQuery = '';
   let sortOrder = 'newest';
   let currentView = 'list';
+  let groupBy = 'incident';
   let map = null;
   let markers = [];
   let entryTypes = [];
@@ -23,6 +25,8 @@
     allIncidents = await incidentsRes.json();
     allEntries = await entriesRes.json();
     entryTypes = await typesRes.json();
+    incidentsById = {};
+    allIncidents.forEach(i => { incidentsById[i.id] = i; });
 
     document.getElementById('site-title').textContent = config.siteTitle;
     document.getElementById('site-tagline').textContent = config.siteTagline;
@@ -193,28 +197,88 @@
     return list;
   }
 
-  function render() {
-    const incidents = filteredIncidents();
-    const standalone = standaloneEntries();
-    const total = allIncidents.length;
-    const countEl = document.getElementById('results-count');
-    countEl.textContent = incidents.length === total
-      ? `${total} incident${total === 1 ? '' : 's'}`
-      : `${incidents.length} of ${total} incident${total === 1 ? '' : 's'}`;
+  function allFilteredEntries() {
+    let list = [...allEntries];
+    if (activeType !== 'all') list = list.filter(e => e.type === activeType);
+    if (activeTag) list = list.filter(e => (e.tags || []).includes(activeTag));
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(e => {
+        const incident = e.incident_id ? incidentsById[e.incident_id] : null;
+        return e.title.toLowerCase().includes(q) ||
+          (e.review || '').toLowerCase().includes(q) ||
+          (e.tags || []).some(t => t.toLowerCase().includes(q)) ||
+          (incident ? incident.title.toLowerCase().includes(q) : false);
+      });
+    }
+    list.sort((a, b) => {
+      if (sortOrder === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+    return list;
+  }
 
-    if (currentView === 'list') renderList(incidents, standalone);
-    else renderMap(incidents);
+  function render() {
+    const countEl = document.getElementById('results-count');
+
+    if (currentView === 'map') {
+      const incidents = filteredIncidents();
+      const total = allIncidents.length;
+      countEl.textContent = incidents.length === total
+        ? `${total} incident${total === 1 ? '' : 's'}`
+        : `${incidents.length} of ${total} incident${total === 1 ? '' : 's'}`;
+      renderMap(incidents);
+      return;
+    }
+
+    document.getElementById('incident-grouped').style.display = groupBy === 'type' ? 'none' : 'block';
+    document.getElementById('type-grouped').style.display = groupBy === 'type' ? 'block' : 'none';
+
+    if (groupBy === 'type') {
+      const entries = allFilteredEntries();
+      const total = allEntries.length;
+      countEl.textContent = entries.length === total
+        ? `${total} entr${total === 1 ? 'y' : 'ies'}`
+        : `${entries.length} of ${total} entr${total === 1 ? 'y' : 'ies'}`;
+      renderByType(entries);
+    } else {
+      const incidents = filteredIncidents();
+      const standalone = standaloneEntries();
+      const total = allIncidents.length;
+      countEl.textContent = incidents.length === total
+        ? `${total} incident${total === 1 ? '' : 's'}`
+        : `${incidents.length} of ${total} incident${total === 1 ? '' : 's'}`;
+      renderList(incidents, standalone);
+    }
+  }
+
+  function attachTagButtons(root) {
+    const tagButtons = [
+      ...root.querySelectorAll('.incident-card-tag'),
+      ...root.querySelectorAll('.entry-tag')
+    ];
+    tagButtons.forEach(btn => {
+      btn.addEventListener('click', ev => {
+        ev.preventDefault();
+        const tag = btn.dataset.tag;
+        const cloudBtn = [...document.querySelectorAll('.tag-pill')].find(b => b.textContent === tag);
+        toggleTag(tag, cloudBtn || btn);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    });
   }
 
   function renderList(incidents, standalone) {
+    const root = document.getElementById('incident-grouped');
     const grid = document.getElementById('incidents-grid');
     const emptyEl = document.getElementById('empty');
     const standaloneSection = document.getElementById('standalone-section');
 
     if (incidents.length === 0 && standalone.length === 0) {
       grid.innerHTML = '';
-      emptyEl.style.display = 'block';
       standaloneSection.style.display = 'none';
+      document.getElementById('empty-message').textContent = 'No incidents found.';
+      emptyEl.style.display = 'block';
       return;
     }
     emptyEl.style.display = 'none';
@@ -229,19 +293,37 @@
       standaloneSection.style.display = 'none';
     }
 
-    const tagButtons = [
-      ...grid.querySelectorAll('.incident-card-tag'),
-      ...document.querySelectorAll('#standalone-entries .entry-tag')
-    ];
-    tagButtons.forEach(btn => {
-      btn.addEventListener('click', ev => {
-        ev.preventDefault();
-        const tag = btn.dataset.tag;
-        const cloudBtn = [...document.querySelectorAll('.tag-pill')].find(b => b.textContent === tag);
-        toggleTag(tag, cloudBtn || btn);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
+    attachTagButtons(root);
+  }
+
+  function renderByType(entries) {
+    const container = document.getElementById('type-grouped');
+    const emptyEl = document.getElementById('empty');
+
+    if (entries.length === 0) {
+      container.innerHTML = '';
+      document.getElementById('empty-message').textContent = 'No entries found.';
+      emptyEl.style.display = 'block';
+      return;
+    }
+    emptyEl.style.display = 'none';
+
+    const groups = {};
+    entries.forEach(e => {
+      (groups[e.type] = groups[e.type] || []).push(e);
     });
+
+    const order = entryTypes.filter(t => groups[t]);
+    Object.keys(groups).forEach(t => { if (!order.includes(t)) order.push(t); });
+
+    container.innerHTML = order.map(type => `
+      <div class="type-group">
+        <div class="standalone-separator">${escHtml(type.charAt(0).toUpperCase() + type.slice(1))} <span class="type-group-count">(${groups[type].length})</span></div>
+        <div class="entries-grid">${groups[type].map(e => entryCardHtml(e, true, true)).join('')}</div>
+      </div>
+    `).join('');
+
+    attachTagButtons(container);
   }
 
   function incidentCardHtml(incident) {
@@ -284,7 +366,8 @@
     `;
   }
 
-  function entryCardHtml(e, showLocation) {
+  function entryCardHtml(e, showLocation, showIncidentLink) {
+    const incident = showIncidentLink && e.incident_id ? incidentsById[e.incident_id] : null;
     return `
       <article class="entry-card">
         <div class="entry-type-col">
@@ -295,6 +378,7 @@
             <h2 class="entry-title"><a href="${escHtml(e.url)}" target="_blank" rel="noopener">${escHtml(e.title)}</a></h2>
             <div class="entry-stars">${starsHtml(e.rating)}</div>
           </div>
+          ${incident ? `<a class="entry-incident-link" href="?incident=${escHtml(incident.slug)}">${escHtml(incident.title)}</a>` : ''}
           ${e.review ? `<p class="entry-review">${escHtml(e.review)}</p>` : ''}
           <div class="entry-footer">
             ${showLocation && e.location_name ? `<span class="entry-location">&#9679; ${escHtml(e.location_name)}</span>` : ''}
@@ -367,13 +451,20 @@
 
   function switchView(view) {
     currentView = view;
-    document.querySelectorAll('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === view));
     document.getElementById('view-list').style.display = view === 'list' ? 'block' : 'none';
     document.getElementById('view-map').style.display = view === 'map' ? 'block' : 'none';
+    document.getElementById('group-toggle').style.display = view === 'map' ? 'none' : 'flex';
 
     if (view === 'map' && map) {
       setTimeout(() => map.invalidateSize(), 50);
     }
+    render();
+  }
+
+  function switchGroupBy(group) {
+    groupBy = group;
+    document.querySelectorAll('[data-group]').forEach(b => b.classList.toggle('active', b.dataset.group === group));
     render();
   }
 
@@ -397,8 +488,12 @@
       render();
     });
 
-    document.querySelectorAll('.view-btn').forEach(btn => {
+    document.querySelectorAll('[data-view]').forEach(btn => {
       btn.addEventListener('click', () => switchView(btn.dataset.view));
+    });
+
+    document.querySelectorAll('[data-group]').forEach(btn => {
+      btn.addEventListener('click', () => switchGroupBy(btn.dataset.group));
     });
   }
 

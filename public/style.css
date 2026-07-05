@@ -1118,6 +1118,25 @@ button, .btn-primary, .btn-ghost, .btn-danger {
   border-bottom: 1px solid var(--border);
 }
 
+.type-group:first-child .standalone-separator { margin-top: 0; }
+
+.type-group-count {
+  color: var(--text-dim);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* ── Entry incident link (shown when grouped by type) ── */
+.entry-incident-link {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin-bottom: 0.35rem;
+  text-decoration: none;
+}
+.entry-incident-link:hover { color: var(--accent); text-decoration: underline; }
+
 /* ── Incident detail view ── */
 .detail-back {
   margin-bottom: 1.5rem;
